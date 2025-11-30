@@ -1,0 +1,192 @@
+# DoliQonto language file - en_US
+
+CHARSET=UTF-8
+
+#
+# Module
+#
+ModuleDoliQontoName = DoliQonto
+ModuleDoliQontoDesc = DoliQonto integrates Qonto business banking with Dolibarr. Synchronize transactions, match payments with invoices, manage attachments, and validate tax information.
+
+#
+# Admin page
+#
+QontoSetup = Qonto Setup
+QontoAbout = About Qonto
+Settings = Settings
+About = About
+
+#
+# Configuration
+#
+QONTO_AUTH_METHOD = Authentication Method
+QONTO_API_KEY = API Key (Classic)
+QONTO_OAUTH_CLIENT_ID = OAuth Client ID
+QONTO_OAUTH_CLIENT_SECRET = OAuth Client Secret
+QONTO_ACCESS_TOKEN = Access Token (automatically set)
+QONTO_REFRESH_TOKEN = Refresh Token (automatically set)
+QONTO_TOKEN_EXPIRES_AT = Token Expiry Date (automatically set)
+QONTO_ORGANIZATION_SLUG = Organization Slug
+QONTO_BANK_ACCOUNT_ID = Bank Account ID
+QontoAPIKeyHelp = <strong>Choose your authentication method:</strong><br><br><strong>API Key (Classic):</strong> Get your API key and organization slug from <a href="https://app.qonto.com/settings/integrations" target="_blank">Qonto Settings > Integrations</a>. This method works immediately.<br><br><strong>OAuth 2.0:</strong> Register your application on the <a href="https://developers.qonto.com/sign-up/" target="_blank">Qonto Developer Portal</a> to get OAuth credentials. This method requires approval from Qonto before going to production.
+QONTO_AUTO_SYNC_ENABLED = Enable automatic synchronization
+QONTO_SYNC_DAYS_BACK = Days to sync backwards
+QONTO_AUTO_MATCH_ENABLED = Enable automatic invoice matching
+QONTO_AUTO_ATTACH_SYNC = Enable automatic attachment sync
+
+#
+# OAuth
+#
+ConnectWithQonto = Connect with Qonto
+QontoConnected = Connected to Qonto
+QontoDisconnected = Disconnected from Qonto
+DisconnectQonto = Disconnect from Qonto
+QontoOAuthHelp = You will be redirected to Qonto to authorize this application
+QontoConnectionSuccess = Successfully connected to Qonto
+QontoOAuthError = OAuth authorization error
+QontoOAuthStateError = Security validation failed. Please try again.
+QontoOAuthTokenError = Failed to exchange authorization code for tokens
+QontoOAuthCodeMissing = Authorization code is missing
+
+#
+# Permissions
+#
+Permission500001 = Read Qonto transactions
+Permission500002 = Import Qonto transactions
+Permission500003 = Match payments with invoices
+Permission500004 = Sync attachments
+Permission500005 = Configure Qonto module
+
+#
+# Menu
+#
+Qonto = Qonto
+Transactions = Transactions
+PendingTransactions = Pending Transactions
+PaymentMatching = Payment Matching
+Attachments = Attachments
+Setup = Setup
+
+#
+# Transactions
+#
+QontoTransactions = Qonto Transactions
+TransactionId = Transaction ID
+TransactionsSynced = %s transactions synchronized
+NoNewTransactions = No new transactions to synchronize
+SyncTransactions = Sync Transactions
+AutoMatchAll = Auto-Match All
+TransactionsAutoMatched = transactions automatically matched
+NoTransactionsMatched = No transactions could be automatically matched
+TransactionsIgnored = Transactions ignored
+EmittedAt = Emitted At
+SettledAt = Settled At
+Side = Side
+Credit = Credit
+Debit = Debit
+OperationType = Operation Type
+Counterparty = Counterparty
+CounterpartyName = Counterparty Name
+CounterpartyIBAN = Counterparty IBAN
+SyncStatus = Sync Status
+Pending = Pending
+Matched = Matched
+Ignored = Ignored
+Completed = Completed
+Declined = Declined
+VATAmount = VAT Amount
+VATRate = VAT Rate
+BankAccountId = Bank Account ID
+RawData = Raw Data
+QontoTransaction = Qonto Transaction
+LinkedToQonto = Linked to Qonto
+InvoiceAttachments = Invoice Attachments
+Attachments = Attachments
+QontoTransaction = Qonto Transaction
+LinkedToQonto = Linked to Qonto
+InvoiceAttachments = Invoice Attachments
+Attachments = Attachments
+AttachmentIds = Attachment IDs
+TaxConflict = Tax Conflict
+
+#
+# Matching
+#
+MatchTransaction = Match Transaction
+Match = Match
+SuggestedCustomerInvoices = Suggested Customer Invoices
+SuggestedSupplierInvoices = Suggested Supplier Invoices
+NoMatchingInvoicesFound = No matching invoices found
+ManualSearch = Manual Search
+SearchInvoiceManually = You can search for invoices manually
+SearchInvoices = Search Invoices
+PaymentCreated = Payment created successfully
+
+#
+# Attachments
+#
+AttachmentsSynchronization = Attachments Synchronization
+QontoAttachments = Qonto Attachments
+DolibarrAttachments = Dolibarr Attachments
+DownloadFromQonto = Download from Qonto
+UploadToQonto = Upload to Qonto
+AttachmentsSynced = %s attachment(s) synchronized
+NoAttachmentsToSync = No attachments to synchronize
+RefreshAttachments = Refresh Attachment List
+AttachmentsRefreshed = %s transaction(s) updated with latest attachment information
+ErrorRefreshingAttachments = Error refreshing attachments
+AttachmentsUploaded = %s attachments uploaded
+NoAttachmentsToUpload = No attachments to upload
+
+#
+# Tax Validation
+#
+TaxValidation = Tax Validation
+TaxConflictsFound = Tax conflicts found
+TaxConflictsFoundDesc = %s tax conflicts need your attention
+SelectCorrectTaxInformation = Select the correct tax information
+QontoData = Qonto Data
+DolibarrData = Dolibarr Data
+Resolve = Resolve
+TaxConflictResolved = Tax conflict resolved successfully
+TaxConflictIgnored = Tax conflict ignored
+NoTaxConflicts = No pending tax conflicts
+ResolvedConflicts = Resolved Conflicts
+ChosenSource = Chosen Source
+ResolvedBy = Resolved By
+ResolvedDate = Resolved Date
+NoResolvedConflicts = No resolved conflicts yet
+
+#
+# Messages
+#
+QontoConnectionSuccess = Connection to Qonto API successful
+TestConnection = Test Connection
+QontoBankAccounts = Qonto Bank Accounts
+QontoBankAccountsHelp = Link your Dolibarr bank accounts with your Qonto bank accounts. This allows the module to sync transactions and attachments for each account separately.
+DolibarrBankAccount = Dolibarr Bank Account
+QontoBankAccount = Qonto Bank Account
+QontoIBAN = Qonto IBAN
+SelectQontoAccount = Select Qonto Account
+Link = Link
+Unlink = Unlink
+QontoBankAccountLinked = Bank account linked successfully
+QontoBankAccountUnlinked = Bank account unlinked successfully
+NoDolibarrBankAccounts = No Dolibarr bank accounts found. Please create a bank account first.
+NoQontoAccounts = No Qonto accounts found. Please check your API configuration.
+RefreshQontoAccounts = Refresh Qonto Accounts
+QontoAccountsFetched = Qonto accounts fetched successfully
+AutoLinkAccountsByIBAN = Auto-Link Accounts by IBAN
+AccountsAutoLinked = accounts automatically linked by IBAN
+NoAccountsToLink = No matching accounts found to link
+QontoAPINotConfigured = Qonto API is not configured. Please configure the API key and organization slug first.
+ConfigureAPI = Configure API
+BankAccounts = Bank Accounts
+
+#
+# Database
+#
+DatabaseMaintenance = Database Maintenance
+DatabaseUpgradeHelp = Click the button below to apply database schema updates (migrations). This is safe to run multiple times.
+UpgradeDatabase = Upgrade Database
+DatabaseUpgraded = Database upgraded successfully

@@ -1,0 +1,45 @@
+# IDE and Editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.local
+
+# Dolibarr specific
+temp/
+documents/
+conf/conf.php
+
+# Module development
+node_modules/
+vendor/
+composer.lock
+package-lock.json
+
+# Build artifacts
+*.zip
+*.tar.gz
+*.tar
+dist/
+
+# Test files
+tests/output/
+coverage/
+phpunit.xml
+
+# System files
+.htaccess.backup
