@@ -278,20 +278,18 @@ class QontoTransaction extends CommonObject
 		$dolibarrAccountId = $obj->dolibarr_account_id;
 		
 	// Search for matching bank line
-	// Match criteria: same amount, same account, date within 2 days
+	// Match criteria: exact date, exact amount, same direction (sign), same account
 	// Note: In Dolibarr, debits are negative and credits are positive
-	$dateFrom = date('Y-m-d', $this->settled_at - (2 * 86400)); // 2 days before
-	$dateTo = date('Y-m-d', $this->settled_at + (2 * 86400)); // 2 days after
+	$searchDate = date('Y-m-d', $this->settled_at);
 	
-	// Determine the amount to search for based on side
+	// Determine the amount with correct sign based on side
 	$searchAmount = ($this->side == 'debit') ? -abs($this->amount) : abs($this->amount);
 	
 	$sql = "SELECT b.rowid";
 	$sql .= " FROM ".MAIN_DB_PREFIX."bank as b";
 	$sql .= " WHERE b.fk_account = ".(int)$dolibarrAccountId;
-	$sql .= " AND ABS(b.amount) = ".abs($this->amount);
-	$sql .= " AND b.datev >= '".$this->db->escape($dateFrom)."'";
-	$sql .= " AND b.datev <= '".$this->db->escape($dateTo)."'";
+	$sql .= " AND b.amount = ".$searchAmount; // Exact amount with sign
+	$sql .= " AND b.datev = '".$this->db->escape($searchDate)."'"; // Exact date
 	$sql .= " AND b.rowid NOT IN (";
 	$sql .= "   SELECT fk_bank FROM ".MAIN_DB_PREFIX."qonto_transactions WHERE fk_bank IS NOT NULL";
 	$sql .= " )";

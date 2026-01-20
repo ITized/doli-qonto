@@ -65,7 +65,7 @@ class modDoliQonto extends DolibarrModules
 		$this->editor_url = 'https://itized.com';
 
 		// Possible values for version are: 'development', 'experimental', 'dolibarr', 'dolibarr_deprecated' or a version string like 'x.y.z'
-		$this->version = '1.0.0';
+	$this->version = '1.0.1';
 		// Url to the file with your last numberversion of this module
 		//$this->url_last_version = 'http://www.example.com/versionmodule.txt';
 
@@ -126,7 +126,7 @@ class modDoliQonto extends DolibarrModules
 		// A condition to hide module
 		$this->hidden = false;
 		// List of module class names as string that must be enabled if this module is enabled. Example: array('always1'=>'modModuleToEnable1','always2'=>'modModuleToEnable2', 'FR'=>'modModuleToEnableFR'...)
-		$this->depends = array();
+		$this->depends = array('modBanque');
 		$this->requiredby = array(); // List of module class names as string to disable if this one is disabled. Example: array('modModuleToDisable1', ...)
 		$this->conflictwith = array(); // List of module class names as string this module is in conflict with. Example: array('modModuleToDisable1', ...)
 
@@ -233,31 +233,31 @@ class modDoliQonto extends DolibarrModules
 		$this->menu = array();
 		$r = 0;
 		// Add here entries to declare new menus
-		/* BEGIN MODULEBUILDER TOPMENU */
+		/* BEGIN MODULEBUILDER LEFTMENU QONTO */
+		// Add Qonto submenu under Bank module
 		$this->menu[$r++] = array(
-			'fk_menu'=>'', // '' if this is a top menu. For left menu, use 'fk_mainmenu=xxx' or 'fk_mainmenu=xxx,fk_leftmenu=yyy' where xxx is mainmenucode and yyy is a leftmenucode
-			'type'=>'top', // This is a Top menu entry
+			'fk_menu'=>'fk_mainmenu=bank',
+			'type'=>'left',
 			'titre'=>'Qonto',
 			'prefix' => img_picto('', $this->picto, 'class="paddingright pictofixedwidth valignmiddle"'),
-			'mainmenu'=>'qonto',
-			'leftmenu'=>'',
+			'mainmenu'=>'bank',
+			'leftmenu'=>'qonto',
 			'url'=>'/doliqonto/transactions.php',
-			'langs'=>'doliqonto@doliqonto', // Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
+			'langs'=>'doliqonto@doliqonto',
 			'position'=>1000 + $r,
-			'enabled'=>'$conf->doliqonto->enabled', // Define condition to show or hide menu entry. Use '$conf->doliqonto->enabled' if entry must be visible if module is enabled.
-			'perms'=>'$user->rights->doliqonto->transaction->read', // Use 'perms'=>'$user->rights->doliqonto->level1->level2' if you want your menu with a permission rules
+			'enabled'=>'$conf->doliqonto->enabled',
+			'perms'=>'$user->rights->doliqonto->transaction->read',
 			'target'=>'',
-			'user'=>2, // 0=Menu for internal users, 1=external users, 2=both
+			'user'=>2,
 		);
-		/* END MODULEBUILDER TOPMENU */
 
 		/* BEGIN MODULEBUILDER LEFTMENU TRANSACTIONS */
 		$this->menu[$r++] = array(
-			'fk_menu'=>'fk_mainmenu=qonto',
+			'fk_menu'=>'fk_mainmenu=bank,fk_leftmenu=qonto',
 			'type'=>'left',
 			'titre'=>'Transactions',
 			'prefix' => img_picto('', 'payment', 'class="paddingright pictofixedwidth valignmiddle"'),
-			'mainmenu'=>'qonto',
+			'mainmenu'=>'bank',
 			'leftmenu'=>'qonto_transactions',
 			'url'=>'/doliqonto/transactions.php',
 			'langs'=>'doliqonto@doliqonto',
@@ -268,12 +268,12 @@ class modDoliQonto extends DolibarrModules
 			'user'=>2,
 		);
 		$this->menu[$r++] = array(
-			'fk_menu'=>'fk_mainmenu=qonto,fk_leftmenu=qonto_transactions',
+			'fk_menu'=>'fk_mainmenu=bank,fk_leftmenu=qonto_transactions',
 			'type'=>'left',
 			'titre'=>'PendingTransactions',
-			'mainmenu'=>'qonto',
+			'mainmenu'=>'bank',
 			'leftmenu'=>'qonto_pending',
-			'url'=>'/doliqonto/transactions.php',
+			'url'=>'/doliqonto/transactions.php?search_match_status=pending',
 			'langs'=>'doliqonto@doliqonto',
 			'position'=>1000 + $r,
 			'enabled'=>'$conf->doliqonto->enabled',
@@ -285,11 +285,11 @@ class modDoliQonto extends DolibarrModules
 
 		/* BEGIN MODULEBUILDER LEFTMENU ATTACHMENTS */
 		$this->menu[$r++] = array(
-			'fk_menu'=>'fk_mainmenu=qonto',
+			'fk_menu'=>'fk_mainmenu=bank,fk_leftmenu=qonto',
 			'type'=>'left',
 			'titre'=>'Attachments',
 			'prefix' => img_picto('', 'attach', 'class="paddingright pictofixedwidth valignmiddle"'),
-			'mainmenu'=>'qonto',
+			'mainmenu'=>'bank',
 			'leftmenu'=>'qonto_attachments',
 			'url'=>'/doliqonto/attachments.php',
 			'langs'=>'doliqonto@doliqonto',
@@ -303,11 +303,11 @@ class modDoliQonto extends DolibarrModules
 
 		/* BEGIN MODULEBUILDER LEFTMENU TAX */
 		$this->menu[$r++] = array(
-			'fk_menu'=>'fk_mainmenu=qonto',
+			'fk_menu'=>'fk_mainmenu=bank,fk_leftmenu=qonto',
 			'type'=>'left',
 			'titre'=>'TaxValidation',
 			'prefix' => img_picto('', 'bill', 'class="paddingright pictofixedwidth valignmiddle"'),
-			'mainmenu'=>'qonto',
+			'mainmenu'=>'bank',
 			'leftmenu'=>'qonto_taxvalidation',
 			'url'=>'/doliqonto/taxvalidation.php',
 			'langs'=>'doliqonto@doliqonto',
@@ -321,11 +321,11 @@ class modDoliQonto extends DolibarrModules
 
 		/* BEGIN MODULEBUILDER LEFTMENU CONFIGURATION */
 		$this->menu[$r++] = array(
-			'fk_menu'=>'fk_mainmenu=qonto',
+			'fk_menu'=>'fk_mainmenu=bank,fk_leftmenu=qonto',
 			'type'=>'left',
 			'titre'=>'Setup',
 			'prefix' => img_picto('', 'setup', 'class="paddingright pictofixedwidth valignmiddle"'),
-			'mainmenu'=>'qonto',
+			'mainmenu'=>'bank',
 			'leftmenu'=>'qonto_setup',
 			'url'=>'/doliqonto/admin/setup.php',
 			'langs'=>'doliqonto@doliqonto',

@@ -84,6 +84,21 @@ if ($id > 0) {
  * Actions
  */
 
+if ($action == 'link_bank_line' && GETPOST('bank_line_id', 'int') > 0) {
+	// Link transaction directly to a bank line
+	$bank_line_id = GETPOST('bank_line_id', 'int');
+	
+	$result = $transaction->linkToBankLine($bank_line_id, $user);
+	
+	if ($result > 0) {
+		setEventMessages($langs->trans("TransactionLinkedToBankLine"), null, 'mesgs');
+		header('Location: transactions.php');
+		exit;
+	} else {
+		setEventMessages($transaction->error, null, 'errors');
+	}
+}
+
 if ($action == 'match' && $invoice_id > 0 && $invoice_type) {
 	// Match transaction with invoice
 	$result = $transaction->matchWithInvoice($invoice_id, $invoice_type, $user);
@@ -251,14 +266,14 @@ if ($transaction->side == 'credit') {
 	$invoice_type = 'customer';
 	print '<h3>'.$langs->trans("SuggestedCustomerInvoices").'</h3>';
 	
-	$sql = "SELECT f.rowid, f.ref, f.total_ttc, f.date_creation, f.paye, s.nom as company_name";
+	$sql = "SELECT f.rowid, f.ref, f.total_ttc, f.datec as date_creation, f.paye, s.nom as company_name";
 	$sql .= " FROM ".MAIN_DB_PREFIX."facture as f";
 	$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."societe as s ON f.fk_soc = s.rowid";
 	$sql .= " WHERE f.entity = ".$conf->entity;
 	$sql .= " AND f.paye = 0";
 	$sql .= " AND f.fk_statut = 1"; // Validated
 	$sql .= " AND ABS(f.total_ttc - ".abs($transaction->amount).") < 1"; // Match amount with 1 euro tolerance
-	$sql .= " ORDER BY f.date_creation DESC";
+	$sql .= " ORDER BY f.datec DESC";
 	$sql .= " LIMIT 20";
 } else {
 	// Debit = money sent = supplier invoice
@@ -335,6 +350,120 @@ if ($resql) {
 	$db->free($resql);
 } else {
 	dol_print_error($db);
+}
+
+print '</div>';
+
+// Suggested bank lines section
+print '<div class="fichecenter">';
+print '<br><hr><br>';
+print '<h3>'.$langs->trans("SuggestedBankLines").'</h3>';
+
+print '<div class="warning">';
+print $langs->trans("BankLineMatchingWarning");
+print '</div>';
+print '<br>';
+
+// Get Dolibarr bank account from Qonto bank account
+$sql = "SELECT ba.rowid as dolibarr_account_id FROM ".MAIN_DB_PREFIX."bank_account as ba";
+$sql .= " INNER JOIN ".MAIN_DB_PREFIX."bank_account_extrafields as ef ON ef.fk_object = ba.rowid";
+$sql .= " WHERE ef.qonto_bank_id = '".$db->escape($transaction->bank_account_id)."'";
+$sql .= " AND ba.entity = ".$conf->entity;
+
+$resql = $db->query($sql);
+$dolibarrAccountId = 0;
+
+if ($resql && $db->num_rows($resql) > 0) {
+	$obj = $db->fetch_object($resql);
+	$dolibarrAccountId = $obj->dolibarr_account_id;
+}
+
+if ($dolibarrAccountId > 0) {
+	// Search for bank lines with flexible matching
+	// Match criteria: same account, similar amount (±10%), date within 7 days
+	$dateFrom = date('Y-m-d', $transaction->settled_at - (7 * 86400)); // 7 days before
+	$dateTo = date('Y-m-d', $transaction->settled_at + (7 * 86400)); // 7 days after
+	$amountMin = abs($transaction->amount) * 0.9; // -10%
+	$amountMax = abs($transaction->amount) * 1.1; // +10%
+	
+	// Determine the sign based on side
+	$signCondition = ($transaction->side == 'debit') ? "b.amount < 0" : "b.amount > 0";
+	
+	$sql = "SELECT b.rowid, b.datev, b.amount, b.label, b.num_releve";
+	$sql .= " FROM ".MAIN_DB_PREFIX."bank as b";
+	$sql .= " WHERE b.fk_account = ".(int)$dolibarrAccountId;
+	$sql .= " AND ".$signCondition; // Same direction (debit/credit)
+	$sql .= " AND ABS(b.amount) >= ".$amountMin;
+	$sql .= " AND ABS(b.amount) <= ".$amountMax;
+	$sql .= " AND b.datev >= '".$db->escape($dateFrom)."'";
+	$sql .= " AND b.datev <= '".$db->escape($dateTo)."'";
+	$sql .= " AND b.rowid NOT IN (";
+	$sql .= "   SELECT fk_bank FROM ".MAIN_DB_PREFIX."qonto_transactions WHERE fk_bank IS NOT NULL";
+	$sql .= " )";
+	$sql .= " ORDER BY ABS(ABS(b.amount) - ".abs($transaction->amount)."), ABS(DATEDIFF(b.datev, '".$db->escape(date('Y-m-d', $transaction->settled_at))."'))";
+	$sql .= " LIMIT 20";
+	
+	$resql = $db->query($sql);
+	
+	if ($resql) {
+		$num = $db->num_rows($resql);
+		
+		if ($num > 0) {
+			print '<form method="POST" action="'.$_SERVER["PHP_SELF"].'">';
+			print '<input type="hidden" name="token" value="'.newToken().'">';
+			print '<input type="hidden" name="action" value="link_bank_line">';
+			print '<input type="hidden" name="id" value="'.$id.'">';
+			
+			print '<table class="noborder centpercent">';
+			print '<tr class="liste_titre">';
+			print '<th>'.$langs->trans("Date").'</th>';
+			print '<th class="right">'.$langs->trans("Amount").'</th>';
+			print '<th>'.$langs->trans("Label").'</th>';
+			print '<th>'.$langs->trans("BankStatementRef").'</th>';
+			print '<th class="center">'.$langs->trans("Action").'</th>';
+			print '</tr>';
+			
+			$i = 0;
+			while ($i < $num) {
+				$obj = $db->fetch_object($resql);
+				
+				// Calculate differences for display
+				$dateDiff = round(abs(($transaction->settled_at - strtotime($obj->datev)) / 86400));
+				$amountDiff = abs($obj->amount) - abs($transaction->amount);
+				
+				print '<tr class="oddeven">';
+				print '<td>'.dol_print_date($db->jdate($obj->datev), 'day');
+				if ($dateDiff > 0) {
+					print ' <span class="opacitymedium">('.$dateDiff.' '.$langs->trans("days").')</span>';
+				}
+				print '</td>';
+				print '<td class="right">'.price($obj->amount);
+				if (abs($amountDiff) > 0.01) {
+					print ' <span class="opacitymedium">('.($amountDiff >= 0 ? '+' : '').price($amountDiff).')</span>';
+				}
+				print '</td>';
+				print '<td>'.dol_escape_htmltag(dol_trunc($obj->label, 50)).'</td>';
+				print '<td>'.dol_escape_htmltag($obj->num_releve).'</td>';
+				print '<td class="center">';
+				print '<button type="submit" name="bank_line_id" value="'.$obj->rowid.'" class="button">'.$langs->trans("Link").'</button>';
+				print '</td>';
+				print '</tr>';
+				
+				$i++;
+			}
+			
+			print '</table>';
+			print '</form>';
+		} else {
+			print '<div class="info">'.$langs->trans("NoMatchingBankLinesFound").'</div>';
+		}
+		
+		$db->free($resql);
+	} else {
+		dol_print_error($db);
+	}
+} else {
+	print '<div class="warning">'.$langs->trans("BankAccountNotLinked").'</div>';
 }
 
 print '</div>';

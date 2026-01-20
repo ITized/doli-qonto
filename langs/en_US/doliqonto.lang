@@ -47,6 +47,9 @@ QontoOAuthError = OAuth authorization error
 QontoOAuthStateError = Security validation failed. Please try again.
 QontoOAuthTokenError = Failed to exchange authorization code for tokens
 QontoOAuthCodeMissing = Authorization code is missing
+OAuthFeatureWarning = <strong>Note:</strong> OAuth authentication is currently under development and may not work reliably. We recommend using the API Key authentication method for now.
+AttachmentsFeatureWarning = <strong>Note:</strong> Attachment synchronization is currently under development and may not work as expected. We are working on improving this feature.
+TaxValidationFeatureWarning = <strong>Note:</strong> Tax validation feature is currently under development and may not work as expected. We are working on improving this feature.
 
 #
 # Permissions
@@ -116,11 +119,18 @@ MatchTransaction = Match Transaction
 Match = Match
 SuggestedCustomerInvoices = Suggested Customer Invoices
 SuggestedSupplierInvoices = Suggested Supplier Invoices
+SuggestedBankLines = Suggested Bank Lines
 NoMatchingInvoicesFound = No matching invoices found
+NoMatchingBankLinesFound = No matching bank lines found
 ManualSearch = Manual Search
 SearchInvoiceManually = You can search for invoices manually
 SearchInvoices = Search Invoices
 PaymentCreated = Payment created successfully
+TransactionLinkedToBankLine = Transaction linked to bank line successfully
+BankLineMatchingWarning = <strong>Important:</strong> Linking a Qonto transaction to an existing bank line will only create the link. The bank line itself will not be modified. You may need to manually adjust the bank line details (date, label, etc.) to match the Qonto transaction.
+BankAccountNotLinked = The Qonto bank account for this transaction is not linked to a Dolibarr bank account. Please configure the bank account mapping first.
+BankStatementRef = Bank Statement Ref
+days = days
 
 #
 # Attachments

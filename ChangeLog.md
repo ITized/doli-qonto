@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.0.1] - 2026-01-20
+
+### Fixed
+- Moved Qonto menu inside the Bank module left menu for better integration
+- Fixed customer invoice matching query (incorrect field name `date_creation` replaced with `datec`)
+- Fixed auto-matching functionality to handle empty/null/zero values in `fk_bank` field
+- Fixed transaction list filters (match status, amounts, labels) not applying correctly
+- Fixed form not refreshing after changing authentication method in setup page
+
+### Added
+- Manual bank line matching feature with flexible criteria (±10% amount, ±7 days)
+- Visual warnings for features under development (OAuth, attachments, tax validation)
+- Debug capability for troubleshooting matching issues
+
+### Changed
+- Auto-matching now uses exact date and exact amount with correct sign for better precision
+- Enhanced filter handling with proper validation types (alphanohtml, price2num)
+- Improved error messages and user feedback
+
 ## [1.0.0] - 2025-11-30
 
 ### Added

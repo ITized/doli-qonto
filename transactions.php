@@ -62,13 +62,14 @@ $action = GETPOST('action', 'aZ09');
 $massaction = GETPOST('massaction', 'alpha');
 $confirm = GETPOST('confirm', 'alpha');
 $toselect = GETPOST('toselect', 'array');
+$contextpage = GETPOST('contextpage', 'aZ') ? GETPOST('contextpage', 'aZ') : 'qontotransactionslist';
 
-$search_transaction_id = GETPOST('search_transaction_id', 'alpha');
-$search_status = GETPOST('search_status', 'alpha');
-$search_match_status = GETPOST('search_match_status', 'alpha');
-$search_label = GETPOST('search_label', 'alpha');
-$search_amount_min = GETPOST('search_amount_min', 'alpha');
-$search_amount_max = GETPOST('search_amount_max', 'alpha');
+$search_transaction_id = GETPOST('search_transaction_id', 'alphanohtml');
+$search_status = GETPOST('search_status', 'alphanohtml');
+$search_match_status = GETPOST('search_match_status', 'alphanohtml');
+$search_label = GETPOST('search_label', 'alphanohtml');
+$search_amount_min = price2num(GETPOST('search_amount_min', 'alphanohtml'));
+$search_amount_max = price2num(GETPOST('search_amount_max', 'alphanohtml'));
 
 $limit = GETPOST('limit', 'int') ? GETPOST('limit', 'int') : $conf->liste_limit;
 $sortfield = GETPOST('sortfield', 'aZ09comma');
@@ -119,8 +120,8 @@ if ($action == 'auto_match_all') {
 	// Auto-match all pending transactions (not matched and not ignored)
 	$sql = "SELECT rowid FROM ".MAIN_DB_PREFIX."qonto_transactions";
 	$sql .= " WHERE entity = ".$conf->entity;
-	$sql .= " AND fk_bank IS NULL";
-	$sql .= " AND ignored = 0";
+	$sql .= " AND (fk_bank IS NULL OR fk_bank = '' OR fk_bank = 0)";
+	$sql .= " AND (ignored IS NULL OR ignored = 0)";
 	
 	$resql = $db->query($sql);
 	$matched = 0;
@@ -155,6 +156,16 @@ if ($action == 'ignore' && !empty($toselect)) {
 		$transaction->update($user);
 	}
 	setEventMessages($langs->trans("TransactionsIgnored"), null, 'mesgs');
+}
+
+// Clear filters
+if (GETPOST('button_removefilter_x', 'alpha') || GETPOST('button_removefilter', 'alpha')) {
+	$search_transaction_id = '';
+	$search_status = '';
+	$search_match_status = '';
+	$search_label = '';
+	$search_amount_min = '';
+	$search_amount_max = '';
 }
 
 /*
@@ -192,14 +203,15 @@ $sql .= " WHERE t.entity = ".$conf->entity;
 if ($search_transaction_id) {
 	$sql .= natural_search('t.transaction_id', $search_transaction_id);
 }
-if ($search_status) {
+if ($search_status && $search_status != '-1' && $search_status != '0' && $search_status != '') {
 	$sql .= " AND t.status = '".$db->escape($search_status)."'";
 }
-if ($search_match_status) {
+if ($search_match_status && $search_match_status != '-1' && $search_match_status != '0' && $search_match_status != '') {
 	if ($search_match_status == 'pending') {
-		$sql .= " AND t.fk_bank IS NULL AND t.ignored = 0";
+		$sql .= " AND (t.fk_bank IS NULL OR t.fk_bank = '' OR t.fk_bank = 0)";
+		$sql .= " AND (t.ignored IS NULL OR t.ignored = 0)";
 	} elseif ($search_match_status == 'matched') {
-		$sql .= " AND t.fk_bank IS NOT NULL";
+		$sql .= " AND t.fk_bank IS NOT NULL AND t.fk_bank != '' AND t.fk_bank != 0";
 	} elseif ($search_match_status == 'ignored') {
 		$sql .= " AND t.ignored = 1";
 	}
@@ -207,10 +219,10 @@ if ($search_match_status) {
 if ($search_label) {
 	$sql .= natural_search('t.label', $search_label);
 }
-if ($search_amount_min) {
+if ($search_amount_min !== '' && $search_amount_min !== false) {
 	$sql .= " AND t.amount >= ".(float)$search_amount_min;
 }
-if ($search_amount_max) {
+if ($search_amount_max !== '' && $search_amount_max !== false) {
 	$sql .= " AND t.amount <= ".(float)$search_amount_max;
 }
 
@@ -258,10 +270,15 @@ if ($search_match_status) {
 if ($search_label) {
 	$param .= '&search_label='.urlencode($search_label);
 }
+if ($search_amount_min) {
+	$param .= '&search_amount_min='.urlencode($search_amount_min);
+}
+if ($search_amount_max) {
+	$param .= '&search_amount_max='.urlencode($search_amount_max);
+}
 
 print '<form method="POST" action="'.$_SERVER["PHP_SELF"].'">';
 print '<input type="hidden" name="token" value="'.newToken().'">';
-print '<input type="hidden" name="action" value="list">';
 if ($sortfield) {
 	print '<input type="hidden" name="sortfield" value="'.$sortfield.'">';
 }

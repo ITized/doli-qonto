@@ -138,6 +138,11 @@ llxHeader('', $title, $help_url);
 
 print load_fiche_titre($title);
 
+print '<div class="warning">';
+print img_warning().' '.$langs->trans("TaxValidationFeatureWarning");
+print '</div>';
+print '<br>';
+
 // Get pending tax validations
 $sql = "SELECT tv.rowid, tv.qonto_vat_amount, tv.qonto_vat_rate,";
 $sql .= " tv.dolibarr_vat_amount, tv.dolibarr_vat_rate, tv.status,";

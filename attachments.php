@@ -207,6 +207,11 @@ llxHeader('', $title, $help_url);
 
 print load_fiche_titre($title, '', 'object_doliqonto@doliqonto');
 
+print '<div class="warning">';
+print img_warning().' '.$langs->trans("AttachmentsFeatureWarning");
+print '</div>';
+print '<br>';
+
 // Add refresh button
 print '<div class="tabsAction">';
 print '<a class="butAction" href="'.$_SERVER["PHP_SELF"].'?action=refresh_attachments">'.$langs->trans("RefreshAttachments").'</a>';

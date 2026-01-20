@@ -334,7 +334,7 @@ if (empty($dolibarrAccounts)) {
 				print '<input type="hidden" name="action" value="link_account">';
 				print '<input type="hidden" name="dolibarr_bank_id" value="'.$account->rowid.'">';
 				
-				print '<select name="qonto_bank_id" class="flat minwidth300" required>';
+				print '<select name="qonto_bank_id" class="flat minwidth300" onchange="updateQontoData(this)" required>';
 				print '<option value="">-- '.$langs->trans("SelectQontoAccount").' --</option>';
 				
 				$preselectedName = '';
@@ -361,7 +361,7 @@ if (empty($dolibarrAccounts)) {
 				}
 				
 				print '</select> ';
-				print '<input type="hidden" name="qonto_name" value="'.dol_escape_htmltag($preselectedName).'">';
+				print '<input type="hidden" name="qonto_name" class="qonto_name_field" value="'.dol_escape_htmltag($preselectedName).'">';
 				print '<input type="submit" class="button smallpaddingimp" value="'.$langs->trans("Link").'">';
 				print '</form>';
 				print '</td>';

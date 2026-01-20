@@ -109,6 +109,8 @@ if ($action == 'update') {
 
 	if (!$error) {
 		setEventMessages($langs->trans("SetupSaved"), null, 'mesgs');
+		header('Location: '.$_SERVER['PHP_SELF']);
+		exit;
 	} else {
 		setEventMessages($langs->trans("Error"), null, 'errors');
 	}
@@ -160,6 +162,13 @@ print dol_get_fiche_head($head, 'settings', $langs->trans("ModuleSetup"), -1, 'd
 print '<div class="info">';
 print img_info().' '.$langs->trans("QontoAPIKeyHelp");
 print '</div>';
+
+if ($authMethod == 'oauth2') {
+	print '<div class="warning">';
+	print img_warning().' '.$langs->trans("OAuthFeatureWarning");
+	print '</div>';
+}
+
 print '<br>';
 
 print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
