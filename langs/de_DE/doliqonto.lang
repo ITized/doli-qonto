@@ -1,0 +1,199 @@
+# DoliQonto Sprachdatei - de_DE
+
+CHARSET=UTF-8
+
+#
+# Modul
+#
+ModuleDoliQontoName = DoliQonto
+ModuleDoliQontoDesc = DoliQonto integriert das Geschäftskonto Qonto in Dolibarr. Synchronisieren Sie Transaktionen, ordnen Sie Zahlungen Rechnungen zu, verwalten Sie Anhänge und validieren Sie Steuerinformationen.
+
+#
+# Admin-Seite
+#
+QontoSetup = Qonto Einrichtung
+QontoAbout = Über Qonto
+Settings = Einstellungen
+About = Über
+
+#
+# Konfiguration
+#
+QONTO_AUTH_METHOD = Authentifizierungsmethode
+QONTO_API_KEY = API-Schlüssel (Klassisch)
+QONTO_OAUTH_CLIENT_ID = OAuth Client-ID
+QONTO_OAUTH_CLIENT_SECRET = OAuth Client-Geheimnis
+QONTO_ACCESS_TOKEN = Zugriffstoken (automatisch gesetzt)
+QONTO_REFRESH_TOKEN = Aktualisierungstoken (automatisch gesetzt)
+QONTO_TOKEN_EXPIRES_AT = Token-Ablaufdatum (automatisch gesetzt)
+QONTO_ORGANIZATION_SLUG = Organisations-Kennung
+QONTO_BANK_ACCOUNT_ID = Bankkonto-ID
+QontoAPIKeyHelp = <strong>Wählen Sie Ihre Authentifizierungsmethode:</strong><br><br><strong>API-Schlüssel (Klassisch):</strong> Holen Sie sich Ihren API-Schlüssel und die Organisations-Kennung unter <a href="https://app.qonto.com/settings/integrations" target="_blank">Qonto Einstellungen > Integrationen</a>. Diese Methode funktioniert sofort.<br><br><strong>OAuth 2.0:</strong> Registrieren Sie Ihre Anwendung im <a href="https://developers.qonto.com/sign-up/" target="_blank">Qonto Entwicklerportal</a>, um OAuth-Anmeldedaten zu erhalten. Diese Methode erfordert die Genehmigung von Qonto vor der Produktion.
+QONTO_AUTO_SYNC_ENABLED = Automatische Synchronisierung aktivieren
+QONTO_SYNC_DAYS_BACK = Tage rückwirkend synchronisieren
+QONTO_AUTO_MATCH_ENABLED = Automatische Rechnungszuordnung aktivieren
+QONTO_AUTO_ATTACH_SYNC = Automatische Anhang-Synchronisierung aktivieren
+
+#
+# OAuth
+#
+ConnectWithQonto = Mit Qonto verbinden
+QontoConnected = Mit Qonto verbunden
+QontoDisconnected = Von Qonto getrennt
+DisconnectQonto = Von Qonto trennen
+QontoOAuthHelp = Sie werden zu Qonto weitergeleitet, um diese Anwendung zu autorisieren
+QontoConnectionSuccess = Erfolgreich mit Qonto verbunden
+QontoOAuthError = OAuth-Autorisierungsfehler
+QontoOAuthStateError = Sicherheitsvalidierung fehlgeschlagen. Bitte versuchen Sie es erneut.
+QontoOAuthTokenError = Austausch des Autorisierungscodes gegen Token fehlgeschlagen
+QontoOAuthCodeMissing = Autorisierungscode fehlt
+OAuthFeatureWarning = <strong>Hinweis:</strong> Die OAuth-Authentifizierung befindet sich derzeit in Entwicklung und funktioniert möglicherweise nicht zuverlässig. Wir empfehlen vorerst die API-Schlüssel-Authentifizierung.
+AttachmentsFeatureWarning = <strong>Hinweis:</strong> Die Anhang-Synchronisierung befindet sich derzeit in Entwicklung und funktioniert möglicherweise nicht wie erwartet. Wir arbeiten an der Verbesserung dieser Funktion.
+TaxValidationFeatureWarning = <strong>Hinweis:</strong> Die Steuervalidierungsfunktion befindet sich derzeit in Entwicklung und funktioniert möglicherweise nicht wie erwartet. Wir arbeiten an der Verbesserung dieser Funktion.
+
+#
+# Berechtigungen
+#
+Permission500001 = Qonto-Transaktionen lesen
+Permission500002 = Qonto-Transaktionen importieren
+Permission500003 = Zahlungen mit Rechnungen abgleichen
+Permission500004 = Anhänge synchronisieren
+Permission500005 = Qonto-Modul konfigurieren
+
+#
+# Menü
+#
+Qonto = Qonto
+Transactions = Transaktionen
+PendingTransactions = Ausstehende Transaktionen
+PaymentMatching = Zahlungszuordnung
+Attachments = Anhänge
+Setup = Einrichtung
+
+#
+# Transaktionen
+#
+QontoTransactions = Qonto-Transaktionen
+TransactionId = Transaktions-ID
+TransactionsSynced = %s Transaktionen synchronisiert
+NoNewTransactions = Keine neuen Transaktionen zum Synchronisieren
+SyncTransactions = Transaktionen synchronisieren
+AutoMatchAll = Alle automatisch zuordnen
+TransactionsAutoMatched = Transaktionen automatisch zugeordnet
+NoTransactionsMatched = Keine Transaktionen konnten automatisch zugeordnet werden
+TransactionsIgnored = Transaktionen ignoriert
+EmittedAt = Ausgestellt am
+SettledAt = Abgerechnet am
+Side = Seite
+Credit = Gutschrift
+Debit = Lastschrift
+OperationType = Vorgangsart
+Counterparty = Gegenpartei
+CounterpartyName = Name der Gegenpartei
+CounterpartyIBAN = IBAN der Gegenpartei
+SyncStatus = Synchronisierungsstatus
+Pending = Ausstehend
+Matched = Zugeordnet
+Ignored = Ignoriert
+Completed = Abgeschlossen
+Declined = Abgelehnt
+VATAmount = MwSt.-Betrag
+VATRate = MwSt.-Satz
+BankAccountId = Bankkonto-ID
+RawData = Rohdaten
+QontoTransaction = Qonto-Transaktion
+LinkedToQonto = Mit Qonto verknüpft
+InvoiceAttachments = Rechnungsanhänge
+Attachments = Anhänge
+AttachmentIds = Anhang-IDs
+TaxConflict = Steuerkonflikt
+
+#
+# Zuordnung
+#
+MatchTransaction = Transaktion zuordnen
+Match = Zuordnen
+SuggestedCustomerInvoices = Vorgeschlagene Kundenrechnungen
+SuggestedSupplierInvoices = Vorgeschlagene Lieferantenrechnungen
+SuggestedBankLines = Vorgeschlagene Bankzeilen
+NoMatchingInvoicesFound = Keine passenden Rechnungen gefunden
+NoMatchingBankLinesFound = Keine passenden Bankzeilen gefunden
+ManualSearch = Manuelle Suche
+SearchInvoiceManually = Sie können manuell nach Rechnungen suchen
+SearchInvoices = Rechnungen suchen
+SearchInvoicePlaceholder = Rechnungsnummer oder Firmenname
+PaymentCreated = Zahlung erfolgreich erstellt
+TransactionLinkedToBankLine = Transaktion erfolgreich mit Bankzeile verknüpft
+BankLineMatchingWarning = <strong>Wichtig:</strong> Das Verknüpfen einer Qonto-Transaktion mit einer bestehenden Bankzeile erstellt nur die Verknüpfung. Die Bankzeile selbst wird nicht geändert. Möglicherweise müssen Sie die Bankzeilendetails (Datum, Bezeichnung usw.) manuell anpassen, um sie der Qonto-Transaktion anzupassen.
+BankAccountNotLinked = Das Qonto-Bankkonto für diese Transaktion ist nicht mit einem Dolibarr-Bankkonto verknüpft. Bitte konfigurieren Sie zuerst die Bankkonto-Zuordnung.
+BankStatementRef = Kontoauszugsreferenz
+days = Tage
+
+#
+# Anhänge
+#
+AttachmentsSynchronization = Anhang-Synchronisierung
+QontoAttachments = Qonto-Anhänge
+DolibarrAttachments = Dolibarr-Anhänge
+DownloadFromQonto = Von Qonto herunterladen
+UploadToQonto = Zu Qonto hochladen
+AttachmentsSynced = %s Anhang/Anhänge synchronisiert
+NoAttachmentsToSync = Keine Anhänge zum Synchronisieren
+RefreshAttachments = Anhang-Liste aktualisieren
+AttachmentsRefreshed = %s Transaktion(en) mit den neuesten Anhang-Informationen aktualisiert
+ErrorRefreshingAttachments = Fehler beim Aktualisieren der Anhänge
+AttachmentsUploaded = %s Anhänge hochgeladen
+NoAttachmentsToUpload = Keine Anhänge zum Hochladen
+
+#
+# Steuervalidierung
+#
+TaxValidation = Steuervalidierung
+TaxConflictsFound = Steuerkonflikte gefunden
+TaxConflictsFoundDesc = %s Steuerkonflikte erfordern Ihre Aufmerksamkeit
+SelectCorrectTaxInformation = Wählen Sie die korrekten Steuerinformationen
+QontoData = Qonto-Daten
+DolibarrData = Dolibarr-Daten
+Resolve = Lösen
+TaxConflictResolved = Steuerkonflikt erfolgreich gelöst
+TaxConflictIgnored = Steuerkonflikt ignoriert
+NoTaxConflicts = Keine ausstehenden Steuerkonflikte
+ResolvedConflicts = Gelöste Konflikte
+ChosenSource = Gewählte Quelle
+ResolvedBy = Gelöst von
+ResolvedDate = Lösungsdatum
+NoResolvedConflicts = Noch keine gelösten Konflikte
+
+#
+# Nachrichten
+#
+QontoConnectionSuccess = Verbindung zur Qonto-API erfolgreich
+TestConnection = Verbindung testen
+QontoBankAccounts = Qonto-Bankkonten
+QontoBankAccountsHelp = Verknüpfen Sie Ihre Dolibarr-Bankkonten mit Ihren Qonto-Bankkonten. Dies ermöglicht dem Modul, Transaktionen und Anhänge für jedes Konto separat zu synchronisieren.
+DolibarrBankAccount = Dolibarr-Bankkonto
+QontoBankAccount = Qonto-Bankkonto
+QontoIBAN = Qonto-IBAN
+SelectQontoAccount = Qonto-Konto auswählen
+Link = Verknüpfen
+Unlink = Verknüpfung aufheben
+QontoBankAccountLinked = Bankkonto erfolgreich verknüpft
+QontoBankAccountUnlinked = Bankkonto-Verknüpfung erfolgreich aufgehoben
+NoDolibarrBankAccounts = Keine Dolibarr-Bankkonten gefunden. Bitte erstellen Sie zuerst ein Bankkonto.
+NoQontoAccounts = Keine Qonto-Konten gefunden. Bitte überprüfen Sie Ihre API-Konfiguration.
+RefreshQontoAccounts = Qonto-Konten aktualisieren
+QontoAccountsFetched = Qonto-Konten erfolgreich abgerufen
+AutoLinkAccountsByIBAN = Konten automatisch per IBAN verknüpfen
+AccountsAutoLinked = Konten automatisch per IBAN verknüpft
+NoAccountsToLink = Keine passenden Konten zum Verknüpfen gefunden
+QontoAPINotConfigured = Die Qonto-API ist nicht konfiguriert. Bitte konfigurieren Sie zuerst den API-Schlüssel und die Organisations-Kennung.
+ConfigureAPI = API konfigurieren
+BankAccounts = Bankkonten
+
+#
+# Datenbank
+#
+DatabaseMaintenance = Datenbankwartung
+DatabaseUpgradeHelp = Klicken Sie auf die Schaltfläche unten, um Datenbankschema-Updates (Migrationen) anzuwenden. Dieser Vorgang kann mehrfach sicher ausgeführt werden.
+UpgradeDatabase = Datenbank aktualisieren
+DatabaseUpgraded = Datenbank erfolgreich aktualisiert

@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.1] - 2026-03-14
+
+### Added
+- German translation (de_DE)
+- Spanish translation (es_ES)
+- Italian translation (it_IT)
+- Dutch translation (nl_NL)
+- Portuguese translation (pt_PT)
+
 ## [1.1.0] - 2026-03-14
 
 ### Fixed

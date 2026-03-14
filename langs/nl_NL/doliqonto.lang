@@ -1,0 +1,199 @@
+# DoliQonto taalbestand - nl_NL
+
+CHARSET=UTF-8
+
+#
+# Module
+#
+ModuleDoliQontoName = DoliQonto
+ModuleDoliQontoDesc = DoliQonto integreert Qonto zakelijk bankieren met Dolibarr. Synchroniseer transacties, koppel betalingen aan facturen, beheer bijlagen en valideer belastinginformatie.
+
+#
+# Admin pagina
+#
+QontoSetup = Qonto Instellingen
+QontoAbout = Over Qonto
+Settings = Instellingen
+About = Over
+
+#
+# Configuratie
+#
+QONTO_AUTH_METHOD = Authenticatiemethode
+QONTO_API_KEY = API-sleutel (Klassiek)
+QONTO_OAUTH_CLIENT_ID = OAuth Client-ID
+QONTO_OAUTH_CLIENT_SECRET = OAuth Client-geheim
+QONTO_ACCESS_TOKEN = Toegangstoken (automatisch ingesteld)
+QONTO_REFRESH_TOKEN = Vernieuwingstoken (automatisch ingesteld)
+QONTO_TOKEN_EXPIRES_AT = Vervaldatum token (automatisch ingesteld)
+QONTO_ORGANIZATION_SLUG = Organisatie-identificatie
+QONTO_BANK_ACCOUNT_ID = Bankrekening-ID
+QontoAPIKeyHelp = <strong>Kies uw authenticatiemethode:</strong><br><br><strong>API-sleutel (Klassiek):</strong> Haal uw API-sleutel en organisatie-identificatie op via <a href="https://app.qonto.com/settings/integrations" target="_blank">Qonto Instellingen > Integraties</a>. Deze methode werkt onmiddellijk.<br><br><strong>OAuth 2.0:</strong> Registreer uw applicatie op het <a href="https://developers.qonto.com/sign-up/" target="_blank">Qonto Ontwikkelaarsportaal</a> om OAuth-aanmeldgegevens te verkrijgen. Deze methode vereist goedkeuring van Qonto voordat u naar productie gaat.
+QONTO_AUTO_SYNC_ENABLED = Automatische synchronisatie inschakelen
+QONTO_SYNC_DAYS_BACK = Dagen terug synchroniseren
+QONTO_AUTO_MATCH_ENABLED = Automatische factuurkoppeling inschakelen
+QONTO_AUTO_ATTACH_SYNC = Automatische bijlagesynchronisatie inschakelen
+
+#
+# OAuth
+#
+ConnectWithQonto = Verbinden met Qonto
+QontoConnected = Verbonden met Qonto
+QontoDisconnected = Losgekoppeld van Qonto
+DisconnectQonto = Loskoppelen van Qonto
+QontoOAuthHelp = U wordt doorgestuurd naar Qonto om deze applicatie te autoriseren
+QontoConnectionSuccess = Succesvol verbonden met Qonto
+QontoOAuthError = OAuth-autorisatiefout
+QontoOAuthStateError = Beveiligingsvalidatie mislukt. Probeer het opnieuw.
+QontoOAuthTokenError = Uitwisseling van autorisatiecode voor tokens mislukt
+QontoOAuthCodeMissing = Autorisatiecode ontbreekt
+OAuthFeatureWarning = <strong>Let op:</strong> OAuth-authenticatie is momenteel in ontwikkeling en werkt mogelijk niet betrouwbaar. We raden aan om voorlopig de API-sleutel authenticatiemethode te gebruiken.
+AttachmentsFeatureWarning = <strong>Let op:</strong> Bijlagesynchronisatie is momenteel in ontwikkeling en werkt mogelijk niet zoals verwacht. We werken aan het verbeteren van deze functionaliteit.
+TaxValidationFeatureWarning = <strong>Let op:</strong> De belastingvalidatiefunctie is momenteel in ontwikkeling en werkt mogelijk niet zoals verwacht. We werken aan het verbeteren van deze functionaliteit.
+
+#
+# Rechten
+#
+Permission500001 = Qonto-transacties lezen
+Permission500002 = Qonto-transacties importeren
+Permission500003 = Betalingen koppelen aan facturen
+Permission500004 = Bijlagen synchroniseren
+Permission500005 = Qonto-module configureren
+
+#
+# Menu
+#
+Qonto = Qonto
+Transactions = Transacties
+PendingTransactions = Lopende transacties
+PaymentMatching = Betalingskoppeling
+Attachments = Bijlagen
+Setup = Instellingen
+
+#
+# Transacties
+#
+QontoTransactions = Qonto-transacties
+TransactionId = Transactie-ID
+TransactionsSynced = %s transacties gesynchroniseerd
+NoNewTransactions = Geen nieuwe transacties om te synchroniseren
+SyncTransactions = Transacties synchroniseren
+AutoMatchAll = Alles automatisch koppelen
+TransactionsAutoMatched = transacties automatisch gekoppeld
+NoTransactionsMatched = Geen transacties konden automatisch worden gekoppeld
+TransactionsIgnored = Transacties genegeerd
+EmittedAt = Uitgegeven op
+SettledAt = Afgerekend op
+Side = Type
+Credit = Credit
+Debit = Debet
+OperationType = Type bewerking
+Counterparty = Tegenpartij
+CounterpartyName = Naam tegenpartij
+CounterpartyIBAN = IBAN tegenpartij
+SyncStatus = Synchronisatiestatus
+Pending = Lopend
+Matched = Gekoppeld
+Ignored = Genegeerd
+Completed = Voltooid
+Declined = Geweigerd
+VATAmount = BTW-bedrag
+VATRate = BTW-tarief
+BankAccountId = Bankrekening-ID
+RawData = Ruwe gegevens
+QontoTransaction = Qonto-transactie
+LinkedToQonto = Gekoppeld aan Qonto
+InvoiceAttachments = Factuurbijlagen
+Attachments = Bijlagen
+AttachmentIds = Bijlage-ID's
+TaxConflict = Belastingconflict
+
+#
+# Koppeling
+#
+MatchTransaction = Transactie koppelen
+Match = Koppelen
+SuggestedCustomerInvoices = Voorgestelde klantfacturen
+SuggestedSupplierInvoices = Voorgestelde leveranciersfacturen
+SuggestedBankLines = Voorgestelde bankregels
+NoMatchingInvoicesFound = Geen overeenkomende facturen gevonden
+NoMatchingBankLinesFound = Geen overeenkomende bankregels gevonden
+ManualSearch = Handmatig zoeken
+SearchInvoiceManually = U kunt handmatig naar facturen zoeken
+SearchInvoices = Facturen zoeken
+SearchInvoicePlaceholder = Factuurnummer of bedrijfsnaam
+PaymentCreated = Betaling succesvol aangemaakt
+TransactionLinkedToBankLine = Transactie succesvol gekoppeld aan bankregel
+BankLineMatchingWarning = <strong>Belangrijk:</strong> Het koppelen van een Qonto-transactie aan een bestaande bankregel maakt alleen de koppeling aan. De bankregel zelf wordt niet gewijzigd. Mogelijk moet u de bankregeldetails (datum, omschrijving, enz.) handmatig aanpassen aan de Qonto-transactie.
+BankAccountNotLinked = De Qonto-bankrekening voor deze transactie is niet gekoppeld aan een Dolibarr-bankrekening. Configureer eerst de bankrekeningkoppeling.
+BankStatementRef = Bankafschrift ref.
+days = dagen
+
+#
+# Bijlagen
+#
+AttachmentsSynchronization = Bijlagesynchronisatie
+QontoAttachments = Qonto-bijlagen
+DolibarrAttachments = Dolibarr-bijlagen
+DownloadFromQonto = Downloaden van Qonto
+UploadToQonto = Uploaden naar Qonto
+AttachmentsSynced = %s bijlage(n) gesynchroniseerd
+NoAttachmentsToSync = Geen bijlagen om te synchroniseren
+RefreshAttachments = Bijlagelijst vernieuwen
+AttachmentsRefreshed = %s transactie(s) bijgewerkt met de nieuwste bijlage-informatie
+ErrorRefreshingAttachments = Fout bij het vernieuwen van bijlagen
+AttachmentsUploaded = %s bijlagen geüpload
+NoAttachmentsToUpload = Geen bijlagen om te uploaden
+
+#
+# Belastingvalidatie
+#
+TaxValidation = Belastingvalidatie
+TaxConflictsFound = Belastingconflicten gevonden
+TaxConflictsFoundDesc = %s belastingconflicten vereisen uw aandacht
+SelectCorrectTaxInformation = Selecteer de juiste belastinginformatie
+QontoData = Qonto-gegevens
+DolibarrData = Dolibarr-gegevens
+Resolve = Oplossen
+TaxConflictResolved = Belastingconflict succesvol opgelost
+TaxConflictIgnored = Belastingconflict genegeerd
+NoTaxConflicts = Geen lopende belastingconflicten
+ResolvedConflicts = Opgeloste conflicten
+ChosenSource = Gekozen bron
+ResolvedBy = Opgelost door
+ResolvedDate = Oplossingsdatum
+NoResolvedConflicts = Nog geen opgeloste conflicten
+
+#
+# Berichten
+#
+QontoConnectionSuccess = Verbinding met Qonto API succesvol
+TestConnection = Verbinding testen
+QontoBankAccounts = Qonto-bankrekeningen
+QontoBankAccountsHelp = Koppel uw Dolibarr-bankrekeningen aan uw Qonto-bankrekeningen. Hierdoor kan de module transacties en bijlagen voor elke rekening afzonderlijk synchroniseren.
+DolibarrBankAccount = Dolibarr-bankrekening
+QontoBankAccount = Qonto-bankrekening
+QontoIBAN = Qonto-IBAN
+SelectQontoAccount = Selecteer Qonto-rekening
+Link = Koppelen
+Unlink = Ontkoppelen
+QontoBankAccountLinked = Bankrekening succesvol gekoppeld
+QontoBankAccountUnlinked = Bankrekening succesvol ontkoppeld
+NoDolibarrBankAccounts = Geen Dolibarr-bankrekeningen gevonden. Maak eerst een bankrekening aan.
+NoQontoAccounts = Geen Qonto-rekeningen gevonden. Controleer uw API-configuratie.
+RefreshQontoAccounts = Qonto-rekeningen vernieuwen
+QontoAccountsFetched = Qonto-rekeningen succesvol opgehaald
+AutoLinkAccountsByIBAN = Automatisch koppelen op IBAN
+AccountsAutoLinked = rekeningen automatisch gekoppeld op IBAN
+NoAccountsToLink = Geen overeenkomende rekeningen gevonden om te koppelen
+QontoAPINotConfigured = De Qonto API is niet geconfigureerd. Configureer eerst de API-sleutel en organisatie-identificatie.
+ConfigureAPI = API configureren
+BankAccounts = Bankrekeningen
+
+#
+# Database
+#
+DatabaseMaintenance = Database-onderhoud
+DatabaseUpgradeHelp = Klik op de knop hieronder om database-schema-updates (migraties) toe te passen. Deze bewerking kan meerdere keren veilig worden uitgevoerd.
+UpgradeDatabase = Database bijwerken
+DatabaseUpgraded = Database succesvol bijgewerkt

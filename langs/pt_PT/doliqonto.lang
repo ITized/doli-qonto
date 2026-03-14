@@ -1,0 +1,199 @@
+# Ficheiro de idioma DoliQonto - pt_PT
+
+CHARSET=UTF-8
+
+#
+# Módulo
+#
+ModuleDoliQontoName = DoliQonto
+ModuleDoliQontoDesc = DoliQonto integra a banca empresarial Qonto com o Dolibarr. Sincronize transações, associe pagamentos a faturas, gerencie anexos e valide informações fiscais.
+
+#
+# Página de administração
+#
+QontoSetup = Configuração Qonto
+QontoAbout = Sobre Qonto
+Settings = Definições
+About = Sobre
+
+#
+# Configuração
+#
+QONTO_AUTH_METHOD = Método de autenticação
+QONTO_API_KEY = Chave API (Clássica)
+QONTO_OAUTH_CLIENT_ID = ID de Cliente OAuth
+QONTO_OAUTH_CLIENT_SECRET = Segredo de Cliente OAuth
+QONTO_ACCESS_TOKEN = Token de acesso (definido automaticamente)
+QONTO_REFRESH_TOKEN = Token de atualização (definido automaticamente)
+QONTO_TOKEN_EXPIRES_AT = Data de expiração do token (definido automaticamente)
+QONTO_ORGANIZATION_SLUG = Identificador da organização
+QONTO_BANK_ACCOUNT_ID = ID da conta bancária
+QontoAPIKeyHelp = <strong>Escolha o seu método de autenticação:</strong><br><br><strong>Chave API (Clássica):</strong> Obtenha a sua chave API e o identificador da organização em <a href="https://app.qonto.com/settings/integrations" target="_blank">Definições Qonto > Integrações</a>. Este método funciona imediatamente.<br><br><strong>OAuth 2.0:</strong> Registe a sua aplicação no <a href="https://developers.qonto.com/sign-up/" target="_blank">Portal de Programadores Qonto</a> para obter as credenciais OAuth. Este método requer a aprovação da Qonto antes de entrar em produção.
+QONTO_AUTO_SYNC_ENABLED = Ativar sincronização automática
+QONTO_SYNC_DAYS_BACK = Dias de sincronização para trás
+QONTO_AUTO_MATCH_ENABLED = Ativar associação automática de faturas
+QONTO_AUTO_ATTACH_SYNC = Ativar sincronização automática de anexos
+
+#
+# OAuth
+#
+ConnectWithQonto = Ligar ao Qonto
+QontoConnected = Ligado ao Qonto
+QontoDisconnected = Desligado do Qonto
+DisconnectQonto = Desligar do Qonto
+QontoOAuthHelp = Será redirecionado para o Qonto para autorizar esta aplicação
+QontoConnectionSuccess = Ligação ao Qonto bem-sucedida
+QontoOAuthError = Erro de autorização OAuth
+QontoOAuthStateError = Falha na validação de segurança. Por favor, tente novamente.
+QontoOAuthTokenError = Falha na troca do código de autorização por tokens
+QontoOAuthCodeMissing = O código de autorização está em falta
+OAuthFeatureWarning = <strong>Nota:</strong> A autenticação OAuth está atualmente em desenvolvimento e pode não funcionar de forma fiável. Recomendamos a utilização do método de autenticação por chave API por agora.
+AttachmentsFeatureWarning = <strong>Nota:</strong> A sincronização de anexos está atualmente em desenvolvimento e pode não funcionar como esperado. Estamos a trabalhar na melhoria desta funcionalidade.
+TaxValidationFeatureWarning = <strong>Nota:</strong> A funcionalidade de validação fiscal está atualmente em desenvolvimento e pode não funcionar como esperado. Estamos a trabalhar na melhoria desta funcionalidade.
+
+#
+# Permissões
+#
+Permission500001 = Ler transações Qonto
+Permission500002 = Importar transações Qonto
+Permission500003 = Associar pagamentos a faturas
+Permission500004 = Sincronizar anexos
+Permission500005 = Configurar módulo Qonto
+
+#
+# Menu
+#
+Qonto = Qonto
+Transactions = Transações
+PendingTransactions = Transações pendentes
+PaymentMatching = Associação de pagamentos
+Attachments = Anexos
+Setup = Configuração
+
+#
+# Transações
+#
+QontoTransactions = Transações Qonto
+TransactionId = ID da transação
+TransactionsSynced = %s transações sincronizadas
+NoNewTransactions = Não há novas transações para sincronizar
+SyncTransactions = Sincronizar transações
+AutoMatchAll = Associar tudo automaticamente
+TransactionsAutoMatched = transações associadas automaticamente
+NoTransactionsMatched = Nenhuma transação pôde ser associada automaticamente
+TransactionsIgnored = Transações ignoradas
+EmittedAt = Emitida em
+SettledAt = Liquidada em
+Side = Tipo
+Credit = Crédito
+Debit = Débito
+OperationType = Tipo de operação
+Counterparty = Contraparte
+CounterpartyName = Nome da contraparte
+CounterpartyIBAN = IBAN da contraparte
+SyncStatus = Estado de sincronização
+Pending = Pendente
+Matched = Associada
+Ignored = Ignorada
+Completed = Concluída
+Declined = Recusada
+VATAmount = Montante IVA
+VATRate = Taxa de IVA
+BankAccountId = ID da conta bancária
+RawData = Dados brutos
+QontoTransaction = Transação Qonto
+LinkedToQonto = Ligado ao Qonto
+InvoiceAttachments = Anexos da fatura
+Attachments = Anexos
+AttachmentIds = IDs dos anexos
+TaxConflict = Conflito fiscal
+
+#
+# Associação
+#
+MatchTransaction = Associar transação
+Match = Associar
+SuggestedCustomerInvoices = Faturas de clientes sugeridas
+SuggestedSupplierInvoices = Faturas de fornecedores sugeridas
+SuggestedBankLines = Linhas bancárias sugeridas
+NoMatchingInvoicesFound = Nenhuma fatura correspondente encontrada
+NoMatchingBankLinesFound = Nenhuma linha bancária correspondente encontrada
+ManualSearch = Pesquisa manual
+SearchInvoiceManually = Pode pesquisar faturas manualmente
+SearchInvoices = Pesquisar faturas
+SearchInvoicePlaceholder = Número da fatura ou nome da empresa
+PaymentCreated = Pagamento criado com sucesso
+TransactionLinkedToBankLine = Transação ligada à linha bancária com sucesso
+BankLineMatchingWarning = <strong>Importante:</strong> Ligar uma transação Qonto a uma linha bancária existente apenas criará a ligação. A linha bancária em si não será modificada. Poderá ser necessário ajustar manualmente os detalhes da linha bancária (data, descrição, etc.) para corresponder à transação Qonto.
+BankAccountNotLinked = A conta bancária Qonto desta transação não está ligada a uma conta bancária Dolibarr. Por favor, configure primeiro a correspondência das contas bancárias.
+BankStatementRef = Ref. extrato bancário
+days = dias
+
+#
+# Anexos
+#
+AttachmentsSynchronization = Sincronização de anexos
+QontoAttachments = Anexos Qonto
+DolibarrAttachments = Anexos Dolibarr
+DownloadFromQonto = Transferir do Qonto
+UploadToQonto = Enviar para o Qonto
+AttachmentsSynced = %s anexo(s) sincronizado(s)
+NoAttachmentsToSync = Não há anexos para sincronizar
+RefreshAttachments = Atualizar lista de anexos
+AttachmentsRefreshed = %s transação(ões) atualizada(s) com as informações mais recentes sobre anexos
+ErrorRefreshingAttachments = Erro ao atualizar os anexos
+AttachmentsUploaded = %s anexos enviados
+NoAttachmentsToUpload = Não há anexos para enviar
+
+#
+# Validação fiscal
+#
+TaxValidation = Validação fiscal
+TaxConflictsFound = Conflitos fiscais encontrados
+TaxConflictsFoundDesc = %s conflitos fiscais requerem a sua atenção
+SelectCorrectTaxInformation = Selecione as informações fiscais corretas
+QontoData = Dados Qonto
+DolibarrData = Dados Dolibarr
+Resolve = Resolver
+TaxConflictResolved = Conflito fiscal resolvido com sucesso
+TaxConflictIgnored = Conflito fiscal ignorado
+NoTaxConflicts = Não há conflitos fiscais pendentes
+ResolvedConflicts = Conflitos resolvidos
+ChosenSource = Fonte escolhida
+ResolvedBy = Resolvido por
+ResolvedDate = Data de resolução
+NoResolvedConflicts = Ainda não há conflitos resolvidos
+
+#
+# Mensagens
+#
+QontoConnectionSuccess = Ligação à API Qonto bem-sucedida
+TestConnection = Testar ligação
+QontoBankAccounts = Contas bancárias Qonto
+QontoBankAccountsHelp = Ligue as suas contas bancárias Dolibarr às suas contas bancárias Qonto. Isto permite ao módulo sincronizar transações e anexos para cada conta separadamente.
+DolibarrBankAccount = Conta bancária Dolibarr
+QontoBankAccount = Conta bancária Qonto
+QontoIBAN = IBAN Qonto
+SelectQontoAccount = Selecionar conta Qonto
+Link = Ligar
+Unlink = Desligar
+QontoBankAccountLinked = Conta bancária ligada com sucesso
+QontoBankAccountUnlinked = Conta bancária desligada com sucesso
+NoDolibarrBankAccounts = Nenhuma conta bancária Dolibarr encontrada. Por favor, crie primeiro uma conta bancária.
+NoQontoAccounts = Nenhuma conta Qonto encontrada. Por favor, verifique a sua configuração API.
+RefreshQontoAccounts = Atualizar contas Qonto
+QontoAccountsFetched = Contas Qonto obtidas com sucesso
+AutoLinkAccountsByIBAN = Ligar automaticamente por IBAN
+AccountsAutoLinked = contas ligadas automaticamente por IBAN
+NoAccountsToLink = Nenhuma conta correspondente encontrada para ligar
+QontoAPINotConfigured = A API Qonto não está configurada. Por favor, configure primeiro a chave API e o identificador da organização.
+ConfigureAPI = Configurar API
+BankAccounts = Contas bancárias
+
+#
+# Base de dados
+#
+DatabaseMaintenance = Manutenção da base de dados
+DatabaseUpgradeHelp = Clique no botão abaixo para aplicar atualizações do esquema da base de dados (migrações). Esta operação pode ser executada várias vezes com segurança.
+UpgradeDatabase = Atualizar base de dados
+DatabaseUpgraded = Base de dados atualizada com sucesso
