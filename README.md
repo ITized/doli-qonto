@@ -15,8 +15,10 @@ Complete Dolibarr module for Qonto banking API integration with transaction sync
 - ✅ Auto-link bank accounts by IBAN
 - ✅ Transaction synchronization
 - ✅ Auto-matching with existing bank lines
-- ✅ Manual payment matching with invoices
-- ✅ Attachment sync (Qonto ↔ Dolibarr)
+- ✅ Smart auto-matching with invoices (name, amount, due date)
+- ✅ Manual payment matching with invoices + inline search
+- ✅ Attachment sync (Qonto ↔ Dolibarr) with progress indicator
+- ✅ Duplicate upload prevention (PRG pattern)
 - ✅ Multi-language (EN, FR)
 
 ## Documentation

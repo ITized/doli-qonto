@@ -1,4 +1,4 @@
-# DoliQonto v1.0.0 - Deployment Guide
+# DoliQonto v1.1.0 - Deployment Guide
 
 ## 📋 Pre-Deployment Checklist
 

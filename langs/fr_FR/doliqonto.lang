@@ -46,7 +46,8 @@ QontoConnectionSuccess = Connexion à Qonto réussie
 QontoOAuthError = Erreur d'autorisation OAuth
 QontoOAuthStateError = Échec de la validation de sécurité. Veuillez réessayer.
 QontoOAuthTokenError = Échec de l'échange du code d'autorisation contre les jetons
-QontoOAuthCodeMissing = Le code d'autorisation est manquantOAuthFeatureWarning = <strong>Note :</strong> L'authentification OAuth est actuellement en développement et peut ne pas fonctionner de manière fiable. Nous recommandons d'utiliser la méthode d'authentification par clé API pour le moment.
+QontoOAuthCodeMissing = Le code d'autorisation est manquant
+OAuthFeatureWarning = <strong>Note :</strong> L'authentification OAuth est actuellement en développement et peut ne pas fonctionner de manière fiable. Nous recommandons d'utiliser la méthode d'authentification par clé API pour le moment.
 AttachmentsFeatureWarning = <strong>Note :</strong> La synchronisation des pièces jointes est actuellement en développement et peut ne pas fonctionner comme prévu. Nous travaillons à l'amélioration de cette fonctionnalité.
 TaxValidationFeatureWarning = <strong>Note :</strong> La fonctionnalité de validation fiscale est actuellement en développement et peut ne pas fonctionner comme prévu. Nous travaillons à l'amélioration de cette fonctionnalité.
 #
@@ -119,6 +120,7 @@ NoMatchingBankLinesFound = Aucune ligne bancaire correspondante trouvée
 ManualSearch = Recherche manuelle
 SearchInvoiceManually = Vous pouvez rechercher des factures manuellement
 SearchInvoices = Rechercher des factures
+SearchInvoicePlaceholder = N° facture ou nom du fournisseur
 PaymentCreated = Paiement créé avec succès
 TransactionLinkedToBankLine = Transaction liée à la ligne bancaire avec succès
 BankLineMatchingWarning = <strong>Important :</strong> Lier une transaction Qonto à une ligne bancaire existante créera uniquement le lien. La ligne bancaire elle-même ne sera pas modifiée. Vous devrez peut-être ajuster manuellement les détails de la ligne bancaire (date, libellé, etc.) pour correspondre à la transaction Qonto.

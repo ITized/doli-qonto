@@ -229,7 +229,8 @@ class QontoApi
 		}
 
 		if ($httpCode >= 400) {
-			$this->error = 'HTTP Error ' . $httpCode . ': ' . $response . ' | URL: ' . $url . ' | Auth: ' . $this->authMethod;
+			$this->error = 'HTTP Error ' . $httpCode . ': ' . $response;
+			dol_syslog("QontoApi::makeRequest - URL: " . $url . " Auth: " . $this->authMethod, LOG_DEBUG);
 			return false;
 		}
 
@@ -566,25 +567,126 @@ class QontoApi
 	 * @param string $filename Filename
 	 * @return array|false Response data or false on error
 	 */
-	public function uploadAttachment($transactionId, $filePath, $filename)
+	public function uploadAttachment($transactionId, $filePath, $filename, $rawData = '')
 	{
 		if (!file_exists($filePath)) {
 			$this->error = 'File not found: ' . $filePath;
+			dol_syslog("QontoApi::uploadAttachment - " . $this->error, LOG_ERR);
 			return false;
 		}
 
-		$fileContent = file_get_contents($filePath);
-		if ($fileContent === false) {
-			$this->error = 'Failed to read file: ' . $filePath;
-			return false;
+		// Try to get the UUID 'id' from raw_data (Qonto v2 API may use 'id' instead of 'transaction_id')
+		$apiId = $transactionId;
+		if (!empty($rawData)) {
+			$data = json_decode($rawData, true);
+			if ($data && !empty($data['id'])) {
+				$apiId = $data['id'];
+				dol_syslog("QontoApi::uploadAttachment - Using 'id' from raw_data: " . $apiId . " (transaction_id was: " . $transactionId . ")", LOG_DEBUG);
+			}
 		}
 
-		$data = array(
-			'file' => base64_encode($fileContent),
-			'file_name' => $filename
+		dol_syslog("QontoApi::uploadAttachment - Uploading " . $filename . " to transaction " . $apiId, LOG_DEBUG);
+
+		// Qonto API requires multipart/form-data for file uploads
+		return $this->makeFileUploadRequest('/v2/transactions/' . $apiId . '/attachments', $filePath, $filename);
+	}
+
+	/**
+	 * Upload a file to Qonto API using multipart/form-data
+	 *
+	 * @param string $endpoint API endpoint
+	 * @param string $filePath Full path to the file
+	 * @param string $filename Filename for the upload
+	 * @return array|false API response or false on error
+	 */
+	private function makeFileUploadRequest($endpoint, $filePath, $filename)
+	{
+		if ($this->authMethod == 'oauth2') {
+			if ($this->tokenExpiresAt > 0 && $this->tokenExpiresAt < time() + 300) {
+				if (!empty($this->refreshToken)) {
+					$this->refreshAccessToken();
+				}
+			}
+			if (empty($this->accessToken)) {
+				$this->error = 'Qonto access token is not configured.';
+				return false;
+			}
+			$authHeader = 'Authorization: Bearer ' . $this->accessToken;
+		} else {
+			if (empty($this->apiKey) || empty($this->organizationSlug)) {
+				$this->error = 'Qonto API key or organization slug is not configured';
+				return false;
+			}
+			$authHeader = 'Authorization: ' . $this->organizationSlug . ':' . $this->apiKey;
+		}
+
+		$url = $this->apiUrl . $endpoint;
+
+		$headers = array(
+			$authHeader,
+			'Accept: application/json',
+			'X-Qonto-Idempotency-Key: ' . $this->generateUUID()
 		);
 
-		return $this->makeRequest('/v2/transactions/' . $transactionId . '/attachments', 'POST', $data);
+		if (!empty($this->stagingToken)) {
+			$headers[] = 'X-Qonto-Staging-Token: ' . $this->stagingToken;
+		}
+
+		$cfile = new CURLFile($filePath, mime_content_type($filePath), $filename);
+		$postData = array('file' => $cfile);
+
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+		curl_setopt($ch, CURLOPT_POST, true);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+
+		$response = curl_exec($ch);
+		$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		$curlError = curl_error($ch);
+		curl_close($ch);
+
+		dol_syslog("QontoApi::makeFileUploadRequest - URL: " . $url . " HTTP: " . $httpCode, LOG_DEBUG);
+
+		if ($curlError) {
+			$this->error = 'cURL Error: ' . $curlError;
+			dol_syslog("QontoApi::makeFileUploadRequest - " . $this->error, LOG_ERR);
+			return false;
+		}
+
+		if ($httpCode >= 400) {
+			$this->error = 'HTTP Error ' . $httpCode . ': ' . $response;
+			dol_syslog("QontoApi::makeFileUploadRequest - " . $this->error, LOG_ERR);
+			return false;
+		}
+
+		// Some endpoints return empty body on success (e.g., attachment upload returns 200 with no body)
+		if (empty($response)) {
+			return array('success' => true);
+		}
+
+		$decoded = json_decode($response, true);
+		if (json_last_error() !== JSON_ERROR_NONE) {
+			$this->error = 'JSON decode error: ' . json_last_error_msg();
+			return false;
+		}
+
+		return $decoded;
+	}
+
+	/**
+	 * Generate a UUID v4 for idempotency keys
+	 *
+	 * @return string UUID v4 string
+	 */
+	private function generateUUID()
+	{
+		$data = random_bytes(16);
+		$data[6] = chr(ord($data[6]) & 0x0f | 0x40); // version 4
+		$data[8] = chr(ord($data[8]) & 0x3f | 0x80); // variant RFC 4122
+		return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
 	}
 
 	/**
@@ -607,6 +709,14 @@ class QontoApi
 		}
 
 		$url = $attachmentData['attachment']['url'];
+
+		// Validate URL domain to prevent SSRF
+		$parsedUrl = parse_url($url);
+		if (empty($parsedUrl['host']) || !preg_match('/(\.)?qonto\.(com|co)$/i', $parsedUrl['host'])) {
+			$this->error = 'Invalid attachment URL domain';
+			return false;
+		}
+
 		$fileContent = file_get_contents($url);
 		
 		if ($fileContent === false) {
@@ -847,25 +957,5 @@ class QontoApi
 		
 		dol_syslog("QontoApi::refreshAttachmentIds - Processed ".$accountCount." accounts, updated ".$updated." transactions", LOG_INFO);
 		return $updated;
-	}
-
-	/**
-	 * List client invoices from Qonto
-	 *
-	 * @return array|false Client invoices data or false on error
-	 */
-	public function listClientInvoices()
-	{
-		return $this->makeRequest('/client_invoices');
-	}
-
-	/**
-	 * List supplier invoices from Qonto
-	 *
-	 * @return array|false Supplier invoices data or false on error
-	 */
-	public function listSupplierInvoices()
-	{
-		return $this->makeRequest('/supplier_invoices');
 	}
 }

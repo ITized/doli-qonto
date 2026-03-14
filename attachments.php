@@ -72,6 +72,41 @@ if (!$user->rights->doliqonto->attachment->sync) {
  * Actions
  */
 
+// AJAX endpoint: check attachment count for a transaction from Qonto API
+if ($action == 'ajax_check_attachments' && $transaction_id > 0) {
+	header('Content-Type: application/json');
+	$transaction = new QontoTransaction($db);
+	$transaction->fetch($transaction_id);
+
+	$qontoApi = new QontoApi($db);
+	$apiId = $transaction->transaction_id;
+	if (!empty($transaction->raw_data)) {
+		$rawDecoded = json_decode($transaction->raw_data, true);
+		if ($rawDecoded && !empty($rawDecoded['id'])) {
+			$apiId = $rawDecoded['id'];
+		}
+	}
+
+	$attachments = $qontoApi->listTransactionAttachments($apiId);
+	$count = 0;
+	if ($attachments !== false && isset($attachments['attachments'])) {
+		$count = count($attachments['attachments']);
+		// Also update the local DB
+		$newIds = array();
+		foreach ($attachments['attachments'] as $att) {
+			if (!empty($att['id'])) {
+				$newIds[] = $att['id'];
+			}
+		}
+		$newJson = !empty($newIds) ? json_encode($newIds) : '';
+		$sql = "UPDATE ".MAIN_DB_PREFIX."qonto_transactions SET attachment_ids = '".$db->escape($newJson)."' WHERE rowid = ".(int)$transaction->id;
+		$db->query($sql);
+	}
+
+	print json_encode(array('count' => $count));
+	exit;
+}
+
 if ($action == 'refresh_attachments') {
 	// Refresh attachment IDs from Qonto for all transactions
 	$qontoApi = new QontoApi($db);
@@ -130,7 +165,7 @@ if ($action == 'sync_from_qonto' && $transaction_id > 0) {
 					$sql .= ") VALUES (";
 					$sql .= " ".$conf->entity.",";
 					$sql .= " '".$db->escape($attachmentId)."',";
-					$sql .= " ".$transaction->rowid.",";
+					$sql .= " ".(int)$transaction->id.",";
 					$sql .= " '".$db->escape($filename)."',";
 					$sql .= " ".(int)$attachment['file_size'].",";
 					$sql .= " '".$db->escape($attachment['url'])."',";
@@ -170,21 +205,31 @@ if ($action == 'sync_to_qonto' && $transaction_id > 0) {
 	if ($invoiceInfo) {
 		$invoice = $invoiceInfo['object'];
 		
-		// Get invoice attachments
+		// Get invoice attachments directory
 		if ($invoiceInfo['type'] == 'customer') {
 			$upload_dir = $conf->facture->dir_output . '/' . $invoice->ref;
 		} else {
-			$upload_dir = $conf->fournisseur->facture->dir_output . '/' . $invoice->ref;
+			$subdir = get_exdir($invoice->id, 2, 0, 0, $invoice, 'invoice_supplier');
+			$upload_dir = $conf->fournisseur->facture->dir_output . '/' . $subdir . $invoice->ref;
 		}
+		
+		dol_syslog("DoliQonto attachments.php sync_to_qonto - invoice_type=".$invoiceInfo['type']." invoice_ref=".$invoice->ref." invoice_id=".$invoice->id." upload_dir=".$upload_dir." dir_exists=".dol_is_dir($upload_dir), LOG_DEBUG);
 		
 		$files = dol_dir_list($upload_dir, 'files');
 		
+		dol_syslog("DoliQonto attachments.php sync_to_qonto - files found: ".count($files), LOG_DEBUG);
+		
 		foreach ($files as $file) {
-			$result = $qontoApi->uploadAttachment($transaction->transaction_id, $file['fullname'], $file['name']);
+			dol_syslog("DoliQonto attachments.php sync_to_qonto - uploading: ".$file['fullname'], LOG_DEBUG);
+			$result = $qontoApi->uploadAttachment($transaction->transaction_id, $file['fullname'], $file['name'], $transaction->raw_data);
 			if ($result !== false) {
 				$uploaded++;
+			} else {
+				setEventMessages($qontoApi->error, null, 'errors');
 			}
 		}
+	} else {
+		dol_syslog("DoliQonto attachments.php sync_to_qonto - No linked invoice found for transaction rowid=".$transaction_id." fk_bank=".$transaction->fk_bank, LOG_WARNING);
 	}
 	
 	if ($uploaded > 0) {
@@ -192,7 +237,19 @@ if ($action == 'sync_to_qonto' && $transaction_id > 0) {
 	} else {
 		setEventMessages($langs->trans("NoAttachmentsToUpload"), null, 'warnings');
 	}
+
+	// Redirect to prevent duplicate upload on page refresh (PRG pattern)
+	$redirectUrl = $_SERVER['PHP_SELF'];
+	if ($uploaded > 0) {
+		$redirectUrl .= '?poll_id='.(int)$transaction->id.'&poll_count='.(int)$uploaded;
+	}
+	header('Location: '.$redirectUrl);
+	exit;
 }
+
+// Handle polling params from redirect after upload
+$pollTransactionId = GETPOST('poll_id', 'int');
+$pollExpectedCount = GETPOST('poll_count', 'int');
 
 /*
  * View
@@ -275,7 +332,7 @@ if ($resql) {
 		print '</td>';
 		
 		// Qonto attachments
-		print '<td class="center">';
+		print '<td class="center" id="qonto-att-'.$obj->rowid.'">';
 		if (!empty($obj->attachment_ids) && $obj->attachment_ids != '[]') {
 			$attachmentIds = json_decode($obj->attachment_ids, true);
 			print count($attachmentIds);
@@ -310,6 +367,55 @@ if ($resql) {
 	$db->free($resql);
 } else {
 	dol_print_error($db);
+}
+
+// Polling JS if we just uploaded
+if (!empty($pollTransactionId)) {
+	print '<script>
+(function() {
+	var rowId = '.((int)$pollTransactionId).';
+	var expected = '.((int)$pollExpectedCount).';
+	var maxRetries = 10;
+	var attempt = 0;
+	var cell = document.getElementById("qonto-att-" + rowId);
+	if (!cell) return;
+
+	var originalContent = cell.innerHTML;
+	cell.innerHTML = \'<span class="qonto-loading"></span> <span class="qonto-poll-status">Checking...</span>\';
+
+	function poll() {
+		attempt++;
+		var statusEl = cell.querySelector(".qonto-poll-status");
+		if (statusEl) statusEl.textContent = "Check " + attempt + "/" + maxRetries + "...";
+
+		fetch("'.dol_escape_js($_SERVER['PHP_SELF']).'?action=ajax_check_attachments&transaction_id=" + rowId)
+			.then(function(r) { return r.json(); })
+			.then(function(data) {
+				if (data.count > 0) {
+					cell.innerHTML = data.count;
+					cell.style.color = "#28a745";
+					cell.style.fontWeight = "bold";
+					setTimeout(function() { cell.style.color = ""; cell.style.fontWeight = ""; }, 3000);
+					return;
+				}
+				if (attempt >= maxRetries) {
+					cell.innerHTML = \'<span title="Qonto is still processing. Click Refresh Attachments or check Qonto directly." style="cursor:help;color:#e67e22;">&#9888; 0</span>\';
+					return;
+				}
+				setTimeout(poll, 1500);
+			})
+			.catch(function() {
+				if (attempt >= maxRetries) {
+					cell.innerHTML = \'<span title="Could not verify. Click Refresh Attachments to retry." style="cursor:help;color:#e67e22;">&#9888; ?</span>\';
+				} else {
+					setTimeout(poll, 1500);
+				}
+			});
+	}
+
+	setTimeout(poll, 2000);
+})();
+</script>';
 }
 
 // End of page

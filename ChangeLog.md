@@ -1,5 +1,43 @@
 # Changelog
 
+## [1.1.0] - 2026-03-14
+
+### Fixed
+- Fixed `date()` TypeError on transaction settled_at (was string, not timestamp)
+- Fixed matching page showing wrong dates (used invoice creation date instead of invoice date)
+- Fixed invoices stuck at "Started paying" instead of "Paid" (use `getRemainToPay()` instead of broken `totalpaye`)
+- Fixed supplier invoice attachment path missing `get_exdir()` subdirectory
+- Fixed attachment upload to Qonto: added required `X-Qonto-Idempotency-Key` header
+- Fixed attachment upload using correct transaction UUID from raw API data
+- Fixed duplicate attachment upload on page refresh (Post-Redirect-Get pattern)
+- Fixed `fk_payment` not set for supplier invoice matches in matching page
+- Fixed French translation: two keys concatenated on one line (`QontoOAuthCodeMissing` + `OAuthFeatureWarning`)
+- Fixed English translation: removed duplicate key definitions
+- Fixed error messages leaking internal API URLs to user interface
+- Removed dead code (`listClientInvoices`/`listSupplierInvoices` with wrong endpoints)
+
+### Added
+- Invoice references are now clickable links in matching page
+- Smart invoice sorting: prioritizes company name match, exact amount, due date proximity
+- Auto-match invoice feature: automatically creates payments when unambiguous match found
+- Smart name matching: case-insensitive LIKE, prefix extraction (before `-`/`_`), first word matching
+- Manual invoice search form with inline "Associer" button in matching page
+- Amount tolerance of 20% for forex differences (e.g., USD invoices paid in EUR)
+- Attachment upload progress indicator with polling (spinner + retry counter)
+- Automatic Qonto attachment count refresh after upload via AJAX polling
+- SSRF protection: domain validation on attachment download URLs
+- UUID v4 generation for Qonto API idempotency keys
+
+### Changed
+- Matching page uses `f.datef` (invoice date) and `f.date_lim_reglement` (due date) instead of `f.datec`
+- Attachment upload now uses multipart/form-data with `CURLFile` instead of JSON base64
+- Upload results redirect to prevent duplicate submissions on page refresh
+
+### Security
+- Added SSRF protection on attachment download (URL domain validation against `*.qonto.com`)
+- Prevented duplicate attachment uploads via PRG pattern
+- Removed internal URL and auth method from user-facing error messages
+
 ## [1.0.1] - 2026-01-20
 
 ### Fixed

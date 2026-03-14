@@ -65,6 +65,7 @@ $id = GETPOST('id', 'int');
 $action = GETPOST('action', 'aZ09');
 $invoice_id = GETPOST('invoice_id', 'int');
 $invoice_type = GETPOST('invoice_type', 'alpha');
+$search_invoice = GETPOST('search_invoice', 'alpha');
 
 // Access control
 if (!$user->rights->doliqonto->payment->match) {
@@ -138,11 +139,12 @@ if ($action == 'match' && $invoice_id > 0 && $invoice_type) {
 					}
 				}
 				
-				// Re-fetch invoice to get updated totalpaye after payment creation
+				// Re-fetch invoice to get updated payment state
 				$invoice->fetch($invoice_id);
 				
 				// Check if invoice is fully paid and set status
-				if (abs($invoice->totalpaye - $invoice->total_ttc) < 0.01) {
+				$remaintopay = price2num($invoice->getRemainToPay(), 'MT');
+				if ($remaintopay == 0) {
 					$result = $invoice->setPaid($user);
 					if ($result < 0) {
 						dol_syslog("Error setting invoice as paid: " . $invoice->error, LOG_WARNING);
@@ -188,17 +190,19 @@ if ($action == 'match' && $invoice_id > 0 && $invoice_type) {
 					}
 				}
 				
-				// Re-fetch invoice to get updated totalpaye after payment creation
+				// Re-fetch invoice to get updated payment state
 				$invoice->fetch($invoice_id);
 				
 				// Check if invoice is fully paid and set status
-				if (abs($invoice->totalpaye - $invoice->total_ttc) < 0.01) {
+				$remaintopay = price2num($invoice->getRemainToPay(), 'MT');
+				if ($remaintopay == 0) {
 					$result = $invoice->setPaid($user);
 					if ($result < 0) {
 						dol_syslog("Error setting invoice as paid: " . $invoice->error, LOG_WARNING);
 					}
 				}
 				
+				$transaction->fk_payment = $paymentId;
 				$transaction->update($user);
 				setEventMessages($langs->trans("PaymentCreated"), null, 'mesgs');
 			} else {
@@ -266,28 +270,38 @@ if ($transaction->side == 'credit') {
 	$invoice_type = 'customer';
 	print '<h3>'.$langs->trans("SuggestedCustomerInvoices").'</h3>';
 	
-	$sql = "SELECT f.rowid, f.ref, f.total_ttc, f.datec as date_creation, f.paye, s.nom as company_name";
+	$transactionDate = date('Y-m-d', strtotime($transaction->settled_at ? $transaction->settled_at : $transaction->emitted_at));
+	$sql = "SELECT f.rowid, f.ref, f.total_ttc, f.datef as date_invoice, f.date_lim_reglement, f.paye, s.nom as company_name";
 	$sql .= " FROM ".MAIN_DB_PREFIX."facture as f";
 	$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."societe as s ON f.fk_soc = s.rowid";
 	$sql .= " WHERE f.entity = ".$conf->entity;
 	$sql .= " AND f.paye = 0";
 	$sql .= " AND f.fk_statut = 1"; // Validated
-	$sql .= " AND ABS(f.total_ttc - ".abs($transaction->amount).") < 1"; // Match amount with 1 euro tolerance
-	$sql .= " ORDER BY f.datec DESC";
+	$sql .= " AND ABS(f.total_ttc - ".abs($transaction->amount).") < ".max(1, abs($transaction->amount) * 0.2); // 20% tolerance for forex
+	// Order by: 1) company name matches label, 2) exact amount, 3) due date closest to transaction date
+	$sql .= " ORDER BY";
+	$sql .= " CASE WHEN s.nom = '".$db->escape($transaction->label)."' THEN 0 ELSE 1 END,";
+	$sql .= " ABS(f.total_ttc - ".abs($transaction->amount)."),";
+	$sql .= " ABS(DATEDIFF(COALESCE(f.date_lim_reglement, f.datef), '".$db->escape($transactionDate)."'))";
 	$sql .= " LIMIT 20";
 } else {
 	// Debit = money sent = supplier invoice
 	$invoice_type = 'supplier';
 	print '<h3>'.$langs->trans("SuggestedSupplierInvoices").'</h3>';
 	
-	$sql = "SELECT f.rowid, f.ref, f.total_ttc, f.datec as date_creation, f.paye, s.nom as company_name";
+	$transactionDate = date('Y-m-d', strtotime($transaction->settled_at ? $transaction->settled_at : $transaction->emitted_at));
+	$sql = "SELECT f.rowid, f.ref, f.total_ttc, f.datef as date_invoice, f.date_lim_reglement, f.paye, s.nom as company_name";
 	$sql .= " FROM ".MAIN_DB_PREFIX."facture_fourn as f";
 	$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."societe as s ON f.fk_soc = s.rowid";
 	$sql .= " WHERE f.entity = ".$conf->entity;
 	$sql .= " AND f.paye = 0";
 	$sql .= " AND f.fk_statut = 1"; // Validated
-	$sql .= " AND ABS(f.total_ttc - ".abs($transaction->amount).") < 1"; // Match amount with 1 euro tolerance
-	$sql .= " ORDER BY f.datec DESC";
+	$sql .= " AND ABS(f.total_ttc - ".abs($transaction->amount).") < ".max(1, abs($transaction->amount) * 0.2); // 20% tolerance for forex
+	// Order by: 1) company name matches label, 2) exact amount, 3) due date closest to transaction date
+	$sql .= " ORDER BY";
+	$sql .= " CASE WHEN s.nom = '".$db->escape($transaction->label)."' THEN 0 ELSE 1 END,";
+	$sql .= " ABS(f.total_ttc - ".abs($transaction->amount)."),";
+	$sql .= " ABS(DATEDIFF(COALESCE(f.date_lim_reglement, f.datef), '".$db->escape($transactionDate)."'))";
 	$sql .= " LIMIT 20";
 }
 
@@ -306,7 +320,8 @@ if ($resql) {
 		print '<tr class="liste_titre">';
 		print '<th>'.$langs->trans("Ref").'</th>';
 		print '<th>'.$langs->trans("Company").'</th>';
-		print '<th>'.$langs->trans("Date").'</th>';
+		print '<th>'.$langs->trans("DateInvoice").'</th>';
+		print '<th>'.$langs->trans("DateDue").'</th>';
 		print '<th class="right">'.$langs->trans("Amount").'</th>';
 		print '<th class="center">'.$langs->trans("Status").'</th>';
 		print '<th class="center">'.$langs->trans("Action").'</th>';
@@ -317,9 +332,14 @@ if ($resql) {
 			$obj = $db->fetch_object($resql);
 			
 			print '<tr class="oddeven">';
-			print '<td>'.$obj->ref.'</td>';
+			if ($invoice_type == 'supplier') {
+				print '<td><a href="'.DOL_URL_ROOT.'/fourn/facture/card.php?facid='.$obj->rowid.'">'.dol_escape_htmltag($obj->ref).'</a></td>';
+			} else {
+				print '<td><a href="'.DOL_URL_ROOT.'/compta/facture/card.php?facid='.$obj->rowid.'">'.dol_escape_htmltag($obj->ref).'</a></td>';
+			}
 			print '<td>'.dol_escape_htmltag($obj->company_name).'</td>';
-			print '<td>'.dol_print_date($db->jdate($obj->date_creation), 'day').'</td>';
+			print '<td>'.dol_print_date($db->jdate($obj->date_invoice), 'day').'</td>';
+			print '<td>'.dol_print_date($db->jdate($obj->date_lim_reglement), 'day').'</td>';
 			print '<td class="right">'.price($obj->total_ttc).'</td>';
 			print '<td class="center">';
 			if ($obj->paye) {
@@ -340,11 +360,102 @@ if ($resql) {
 		print '</form>';
 	} else {
 		print '<div class="info">'.$langs->trans("NoMatchingInvoicesFound").'</div>';
+	}
+	
+	// Manual search section — always shown
+	print '<br><h3>'.$langs->trans("ManualSearch").'</h3>';
+	print '<form method="GET" action="'.$_SERVER["PHP_SELF"].'">';
+	print '<input type="hidden" name="id" value="'.$id.'">';
+	print '<div class="inline-block valignmiddle">';
+	print '<input type="text" name="search_invoice" class="flat minwidth200" placeholder="'.$langs->trans("SearchInvoicePlaceholder").'" value="'.dol_escape_htmltag($search_invoice).'">';
+	print ' <button type="submit" class="button">'.$langs->trans("Search").'</button>';
+	print '</div>';
+	print '</form>';
+	
+	// Show search results if search was performed
+	if (!empty($search_invoice)) {
+		$searchTerm = $db->escape($search_invoice);
+		if ($invoice_type == 'supplier') {
+			$sqlSearch = "SELECT f.rowid, f.ref, f.total_ttc, f.datef as date_invoice, f.date_lim_reglement, f.paye, s.nom as company_name, f.multicurrency_code";
+			$sqlSearch .= " FROM ".MAIN_DB_PREFIX."facture_fourn as f";
+			$sqlSearch .= " LEFT JOIN ".MAIN_DB_PREFIX."societe as s ON f.fk_soc = s.rowid";
+			$sqlSearch .= " WHERE f.entity = ".$conf->entity;
+			$sqlSearch .= " AND f.paye = 0";
+			$sqlSearch .= " AND f.fk_statut = 1";
+			$sqlSearch .= " AND (f.ref LIKE '%".$searchTerm."%' OR s.nom LIKE '%".$searchTerm."%')";
+		} else {
+			$sqlSearch = "SELECT f.rowid, f.ref, f.total_ttc, f.datef as date_invoice, f.date_lim_reglement, f.paye, s.nom as company_name, f.multicurrency_code";
+			$sqlSearch .= " FROM ".MAIN_DB_PREFIX."facture as f";
+			$sqlSearch .= " LEFT JOIN ".MAIN_DB_PREFIX."societe as s ON f.fk_soc = s.rowid";
+			$sqlSearch .= " WHERE f.entity = ".$conf->entity;
+			$sqlSearch .= " AND f.paye = 0";
+			$sqlSearch .= " AND f.fk_statut = 1";
+			$sqlSearch .= " AND (f.ref LIKE '%".$searchTerm."%' OR s.nom LIKE '%".$searchTerm."%')";
+		}
+		$sqlSearch .= " ORDER BY f.datef DESC";
+		$sqlSearch .= " LIMIT 50";
 		
-		// Show manual search
-		print '<br><h3>'.$langs->trans("ManualSearch").'</h3>';
-		print '<p>'.$langs->trans("SearchInvoiceManually").'</p>';
-		print '<p><a class="butAction" href="'.($invoice_type == 'customer' ? DOL_URL_ROOT.'/compta/facture/list.php' : DOL_URL_ROOT.'/fourn/facture/list.php').'">'.$langs->trans("SearchInvoices").'</a></p>';
+		$resqlSearch = $db->query($sqlSearch);
+		if ($resqlSearch) {
+			$numSearch = $db->num_rows($resqlSearch);
+			if ($numSearch > 0) {
+				print '<form method="POST" action="'.$_SERVER["PHP_SELF"].'">';
+				print '<input type="hidden" name="token" value="'.newToken().'">';
+				print '<input type="hidden" name="action" value="match">';
+				print '<input type="hidden" name="id" value="'.$id.'">';
+				print '<input type="hidden" name="invoice_type" value="'.$invoice_type.'">';
+				
+				print '<table class="noborder centpercent">';
+				print '<tr class="liste_titre">';
+				print '<th>'.$langs->trans("Ref").'</th>';
+				print '<th>'.$langs->trans("Company").'</th>';
+				print '<th>'.$langs->trans("DateInvoice").'</th>';
+				print '<th>'.$langs->trans("DateDue").'</th>';
+				print '<th class="right">'.$langs->trans("Amount").'</th>';
+				print '<th class="center">'.$langs->trans("Status").'</th>';
+				print '<th class="center">'.$langs->trans("Action").'</th>';
+				print '</tr>';
+				
+				$j = 0;
+				while ($j < $numSearch) {
+					$objS = $db->fetch_object($resqlSearch);
+					
+					print '<tr class="oddeven">';
+					if ($invoice_type == 'supplier') {
+						print '<td><a href="'.DOL_URL_ROOT.'/fourn/facture/card.php?facid='.$objS->rowid.'" target="_blank">'.dol_escape_htmltag($objS->ref).'</a></td>';
+					} else {
+						print '<td><a href="'.DOL_URL_ROOT.'/compta/facture/card.php?facid='.$objS->rowid.'" target="_blank">'.dol_escape_htmltag($objS->ref).'</a></td>';
+					}
+					print '<td>'.dol_escape_htmltag($objS->company_name).'</td>';
+					print '<td>'.dol_print_date($db->jdate($objS->date_invoice), 'day').'</td>';
+					print '<td>'.dol_print_date($db->jdate($objS->date_lim_reglement), 'day').'</td>';
+					print '<td class="right">'.price($objS->total_ttc);
+					if (!empty($objS->multicurrency_code) && $objS->multicurrency_code != $conf->currency) {
+						print ' <span class="opacitymedium">('.$objS->multicurrency_code.')</span>';
+					}
+					print '</td>';
+					print '<td class="center">';
+					if ($objS->paye) {
+						print '<span class="badge badge-status4">'.$langs->trans("Paid").'</span>';
+					} else {
+						print '<span class="badge badge-status1">'.$langs->trans("Unpaid").'</span>';
+					}
+					print '</td>';
+					print '<td class="center">';
+					print '<button type="submit" name="invoice_id" value="'.$objS->rowid.'" class="button">'.$langs->trans("Match").'</button>';
+					print '</td>';
+					print '</tr>';
+					
+					$j++;
+				}
+				
+				print '</table>';
+				print '</form>';
+			} else {
+				print '<div class="info">'.$langs->trans("NoResults").'</div>';
+			}
+			$db->free($resqlSearch);
+		}
 	}
 	
 	$db->free($resql);
@@ -381,8 +492,9 @@ if ($resql && $db->num_rows($resql) > 0) {
 if ($dolibarrAccountId > 0) {
 	// Search for bank lines with flexible matching
 	// Match criteria: same account, similar amount (±10%), date within 7 days
-	$dateFrom = date('Y-m-d', $transaction->settled_at - (7 * 86400)); // 7 days before
-	$dateTo = date('Y-m-d', $transaction->settled_at + (7 * 86400)); // 7 days after
+	$settledTs = strtotime($transaction->settled_at);
+	$dateFrom = date('Y-m-d', $settledTs - (7 * 86400)); // 7 days before
+	$dateTo = date('Y-m-d', $settledTs + (7 * 86400)); // 7 days after
 	$amountMin = abs($transaction->amount) * 0.9; // -10%
 	$amountMax = abs($transaction->amount) * 1.1; // +10%
 	
@@ -400,7 +512,7 @@ if ($dolibarrAccountId > 0) {
 	$sql .= " AND b.rowid NOT IN (";
 	$sql .= "   SELECT fk_bank FROM ".MAIN_DB_PREFIX."qonto_transactions WHERE fk_bank IS NOT NULL";
 	$sql .= " )";
-	$sql .= " ORDER BY ABS(ABS(b.amount) - ".abs($transaction->amount)."), ABS(DATEDIFF(b.datev, '".$db->escape(date('Y-m-d', $transaction->settled_at))."'))";
+	$sql .= " ORDER BY ABS(ABS(b.amount) - ".abs($transaction->amount)."), ABS(DATEDIFF(b.datev, '".$db->escape(date('Y-m-d', $settledTs))."'))";
 	$sql .= " LIMIT 20";
 	
 	$resql = $db->query($sql);
@@ -428,7 +540,7 @@ if ($dolibarrAccountId > 0) {
 				$obj = $db->fetch_object($resql);
 				
 				// Calculate differences for display
-				$dateDiff = round(abs(($transaction->settled_at - strtotime($obj->datev)) / 86400));
+				$dateDiff = round(abs(($settledTs - strtotime($obj->datev)) / 86400));
 				$amountDiff = abs($obj->amount) - abs($transaction->amount);
 				
 				print '<tr class="oddeven">';

@@ -246,8 +246,11 @@ class QontoTransaction extends CommonObject
 	}
 
 	/**
-	 * Try to automatically match this transaction with a Dolibarr bank line
-	 * Matches by: amount, date (within 2 days), and bank account
+	 * Try to automatically match this transaction with a Dolibarr bank line or invoice
+	 * Step 1: Match by exact amount, date, and bank account against existing bank lines
+	 * Step 2: If no bank line found, search for an unambiguous invoice match
+	 *         (company name = label, exact amount, due date = transaction date)
+	 *         and create the payment + bank line automatically
 	 *
 	 * @param User $user User object
 	 * @return int >0 if matched, 0 if no match found, <0 if error
@@ -262,49 +265,204 @@ class QontoTransaction extends CommonObject
 		$sql .= " INNER JOIN ".MAIN_DB_PREFIX."bank_account_extrafields as ef ON ef.fk_object = ba.rowid";
 		$sql .= " WHERE ef.qonto_bank_id = '".$this->db->escape($this->bank_account_id)."'";
 		$sql .= " AND ba.entity = ".$conf->entity;
-		
+
 		$resql = $this->db->query($sql);
 		if (!$resql) {
 			dol_syslog("QontoTransaction::autoMatch - Failed to find Dolibarr account for Qonto ID ".$this->bank_account_id, LOG_WARNING);
 			return 0;
 		}
-		
+
 		$obj = $this->db->fetch_object($resql);
 		if (!$obj) {
 			dol_syslog("QontoTransaction::autoMatch - No Dolibarr account linked to Qonto ID ".$this->bank_account_id, LOG_WARNING);
 			return 0;
 		}
-		
+
 		$dolibarrAccountId = $obj->dolibarr_account_id;
-		
-	// Search for matching bank line
-	// Match criteria: exact date, exact amount, same direction (sign), same account
-	// Note: In Dolibarr, debits are negative and credits are positive
-	$searchDate = date('Y-m-d', $this->settled_at);
-	
-	// Determine the amount with correct sign based on side
-	$searchAmount = ($this->side == 'debit') ? -abs($this->amount) : abs($this->amount);
-	
-	$sql = "SELECT b.rowid";
-	$sql .= " FROM ".MAIN_DB_PREFIX."bank as b";
-	$sql .= " WHERE b.fk_account = ".(int)$dolibarrAccountId;
-	$sql .= " AND b.amount = ".$searchAmount; // Exact amount with sign
-	$sql .= " AND b.datev = '".$this->db->escape($searchDate)."'"; // Exact date
-	$sql .= " AND b.rowid NOT IN (";
-	$sql .= "   SELECT fk_bank FROM ".MAIN_DB_PREFIX."qonto_transactions WHERE fk_bank IS NOT NULL";
-	$sql .= " )";
-	$sql .= " LIMIT 1";
-		
+
+		// Step 1: Search for matching bank line
+		$searchDate = date('Y-m-d', strtotime($this->settled_at));
+		$searchAmount = ($this->side == 'debit') ? -abs($this->amount) : abs($this->amount);
+
+		$sql = "SELECT b.rowid";
+		$sql .= " FROM ".MAIN_DB_PREFIX."bank as b";
+		$sql .= " WHERE b.fk_account = ".(int)$dolibarrAccountId;
+		$sql .= " AND b.amount = ".$searchAmount;
+		$sql .= " AND b.datev = '".$this->db->escape($searchDate)."'";
+		$sql .= " AND b.rowid NOT IN (";
+		$sql .= "   SELECT fk_bank FROM ".MAIN_DB_PREFIX."qonto_transactions WHERE fk_bank IS NOT NULL";
+		$sql .= " )";
+		$sql .= " LIMIT 1";
+
 		$resql = $this->db->query($sql);
 		if ($resql) {
 			$obj = $this->db->fetch_object($resql);
 			if ($obj) {
-				// Match found!
 				$this->fk_bank = $obj->rowid;
 				return $this->update($user);
 			}
 		}
-		
+
+		// Step 2: Search for unambiguous invoice match
+		return $this->autoMatchInvoice($user, $dolibarrAccountId);
+	}
+
+	/**
+	 * Try to auto-match with an invoice: company name = label, exact amount, due date = transaction date.
+	 * Only matches if exactly ONE invoice matches all criteria.
+	 * Creates the payment and bank line automatically.
+	 *
+	 * @param User $user User object
+	 * @param int $dolibarrAccountId Dolibarr bank account ID
+	 * @return int >0 if matched, 0 if no match, <0 if error
+	 */
+	private function autoMatchInvoice(User $user, $dolibarrAccountId)
+	{
+		global $conf;
+
+		$transactionDate = date('Y-m-d', strtotime($this->settled_at ? $this->settled_at : $this->emitted_at));
+
+		// Build name matching condition: match label or counterparty_name against company name (case-insensitive)
+		$nameConditions = array();
+		if (!empty($this->label)) {
+			$escapedLabel = $this->db->escape($this->label);
+			// Full label contains company name or vice versa
+			$nameConditions[] = "LOWER(s.nom) LIKE LOWER('%".$escapedLabel."%')";
+			$nameConditions[] = "LOWER('".$escapedLabel."') LIKE CONCAT('%', LOWER(s.nom), '%')";
+			// Extract prefix before dash/underscore (e.g. "Microsoft" from "Microsoft-G146113366")
+			$labelPrefix = preg_split('/[-_]/', $this->label, 2);
+			if (!empty($labelPrefix[0]) && strlen(trim($labelPrefix[0])) >= 3 && $labelPrefix[0] !== $this->label) {
+				$escapedPrefix = $this->db->escape(trim($labelPrefix[0]));
+				$nameConditions[] = "LOWER(s.nom) LIKE LOWER('".$escapedPrefix."%')";
+			}
+			// First word of label (e.g. "Microsoft" from "Microsoft France")
+			$firstWord = preg_split('/[\s\-_]+/', $this->label, 2);
+			if (!empty($firstWord[0]) && strlen(trim($firstWord[0])) >= 3 && trim($firstWord[0]) !== trim($labelPrefix[0])) {
+				$escapedWord = $this->db->escape(trim($firstWord[0]));
+				$nameConditions[] = "LOWER(s.nom) LIKE LOWER('".$escapedWord."%')";
+			}
+		}
+		if (!empty($this->counterparty_name)) {
+			$escapedCp = $this->db->escape($this->counterparty_name);
+			$nameConditions[] = "LOWER(s.nom) LIKE LOWER('%".$escapedCp."%')";
+			$nameConditions[] = "LOWER('".$escapedCp."') LIKE CONCAT('%', LOWER(s.nom), '%')";
+		}
+
+		if (empty($nameConditions)) {
+			dol_syslog("QontoTransaction::autoMatchInvoice - No label or counterparty_name for transaction ".$this->transaction_id, LOG_DEBUG);
+			return 0;
+		}
+
+		$nameCondition = "(".implode(" OR ", $nameConditions).")";
+
+		$invoiceTable = ($this->side == 'debit') ? "facture_fourn" : "facture";
+
+		// Try 1: exact amount + company name + due date matches transaction date
+		$sql = "SELECT f.rowid, f.ref, f.total_ttc";
+		$sql .= " FROM ".MAIN_DB_PREFIX.$invoiceTable." as f";
+		$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."societe as s ON f.fk_soc = s.rowid";
+		$sql .= " WHERE f.entity = ".$conf->entity;
+		$sql .= " AND f.paye = 0";
+		$sql .= " AND f.fk_statut = 1";
+		$sql .= " AND ABS(f.total_ttc - ".abs($this->amount).") < 0.01";
+		$sql .= " AND ".$nameCondition;
+		$sql .= " AND f.date_lim_reglement = '".$this->db->escape($transactionDate)."'";
+
+		$resql = $this->db->query($sql);
+		$num = $resql ? $this->db->num_rows($resql) : 0;
+
+		// Try 2: if no result with due date, try just exact amount + company name
+		if ($num == 0) {
+			$sql = "SELECT f.rowid, f.ref, f.total_ttc";
+			$sql .= " FROM ".MAIN_DB_PREFIX.$invoiceTable." as f";
+			$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."societe as s ON f.fk_soc = s.rowid";
+			$sql .= " WHERE f.entity = ".$conf->entity;
+			$sql .= " AND f.paye = 0";
+			$sql .= " AND f.fk_statut = 1";
+			$sql .= " AND ABS(f.total_ttc - ".abs($this->amount).") < 0.01";
+			$sql .= " AND ".$nameCondition;
+
+			$resql = $this->db->query($sql);
+			$num = $resql ? $this->db->num_rows($resql) : 0;
+		}
+
+		if ($num != 1) {
+			dol_syslog("QontoTransaction::autoMatchInvoice - Found ".$num." invoice matches for transaction ".$this->transaction_id." (need exactly 1)", LOG_DEBUG);
+			return 0;
+		}
+
+		$obj = $this->db->fetch_object($resql);
+		$invoiceId = $obj->rowid;
+
+		dol_syslog("QontoTransaction::autoMatchInvoice - Unique invoice match found: ".$obj->ref." for transaction ".$this->transaction_id, LOG_INFO);
+
+		// Create payment and bank line — same as manual "Associer" action
+		if ($this->side == 'debit') {
+			require_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.facture.class.php';
+			require_once DOL_DOCUMENT_ROOT.'/fourn/class/paiementfourn.class.php';
+
+			$invoice = new FactureFournisseur($this->db);
+			$invoice->fetch($invoiceId);
+
+			$payment = new PaiementFourn($this->db);
+			$payment->datepaye = $this->settled_at ? $this->settled_at : $this->emitted_at;
+			$payment->amounts = array($invoiceId => abs($this->amount));
+			$payment->paiementid = dol_getIdFromCode($this->db, 'VIR', 'c_paiement', 'code', 'id');
+			$payment->num_paiement = $this->reference ? $this->reference : $this->transaction_id;
+			$payment->note_private = 'Qonto auto-match: '.$this->transaction_id;
+
+			$paymentId = $payment->create($user);
+			if ($paymentId > 0) {
+				if ($dolibarrAccountId > 0) {
+					$bank_line_id = $payment->addPaymentToBank($user, 'payment_supplier', '(paiement)', $dolibarrAccountId, '', '');
+					if ($bank_line_id > 0) {
+						$this->fk_bank = $bank_line_id;
+					}
+				}
+
+				$invoice->fetch($invoiceId);
+				$remaintopay = price2num($invoice->getRemainToPay(), 'MT');
+				if ($remaintopay == 0) {
+					$invoice->setPaid($user);
+				}
+
+				$this->fk_payment = $paymentId;
+				return $this->update($user);
+			}
+		} else {
+			require_once DOL_DOCUMENT_ROOT.'/compta/facture/class/facture.class.php';
+			require_once DOL_DOCUMENT_ROOT.'/compta/paiement/class/paiement.class.php';
+
+			$invoice = new Facture($this->db);
+			$invoice->fetch($invoiceId);
+
+			$payment = new Paiement($this->db);
+			$payment->datepaye = $this->settled_at ? $this->settled_at : $this->emitted_at;
+			$payment->amounts = array($invoiceId => abs($this->amount));
+			$payment->paiementid = dol_getIdFromCode($this->db, 'VIR', 'c_paiement', 'code', 'id');
+			$payment->num_payment = $this->reference ? $this->reference : $this->transaction_id;
+			$payment->note_private = 'Qonto auto-match: '.$this->transaction_id;
+
+			$paymentId = $payment->create($user);
+			if ($paymentId > 0) {
+				if ($dolibarrAccountId > 0) {
+					$bank_line_id = $payment->addPaymentToBank($user, 'payment', '(paiement)', $dolibarrAccountId, '', '');
+					if ($bank_line_id > 0) {
+						$this->fk_bank = $bank_line_id;
+					}
+				}
+
+				$invoice->fetch($invoiceId);
+				$remaintopay = price2num($invoice->getRemainToPay(), 'MT');
+				if ($remaintopay == 0) {
+					$invoice->setPaid($user);
+				}
+
+				$this->fk_payment = $paymentId;
+				return $this->update($user);
+			}
+		}
+
 		return 0;
 	}
 
