@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.2.0] - 2026-04-11
+
+### Added
+- **Monthly bank reconciliation page** (`reconciliation.php`)
+  - Lists available monthly Qonto statements (via `GET /v2/statements`) for each linked bank account
+  - Shows reconciliation status per period: total Qonto transactions, how many are matched to a Dolibarr bank line, how many bank lines already have a `num_releve` assigned
+  - "Assign to statement" action: sets `num_releve = YYYYMM` on Dolibarr `llx_bank` lines that are linked to Qonto transactions from that month but not yet assigned — automates the manual reconciliation step
+  - "Download Qonto PDF" action: fetches the Qonto monthly statement PDF via API and saves it in the correct Dolibarr bank statement directory (`{bank_dir}/{account_id}/statement/{YYYYMM}/{original_filename}`) using the original filename from Qonto, making it visible in `account_statement_document.php`
+  - Direct link to the native Dolibarr `account_statement_document.php` statement page
+  - Per-transaction table showing match status and current `num_releve` value with links
+- New `QontoApi::listStatements()` method: `GET /v2/statements` with filters for account, period range, pagination
+- New `QontoApi::downloadStatement()` method: `GET /v2/statements/{id}`, downloads PDF with SSRF protection (HTTPS + private IP range check)
+- New "Bank Reconciliation" left menu entry under the Qonto section
+- **Manual bank line search** in matching page: search by label, `num_chq`, or statement ref without amount/date constraints; already-linked lines are shown (greyed, with confirmation) rather than silently excluded
+- Fix: `settled_at` null crash in bank line suggestions (fallback to `emitted_at`)
+
+### Changed
+- Module version bumped to 1.2.0
+- No new database table required — reconciliation uses existing `llx_bank.num_releve` and `llx_qonto_transactions.fk_bank` fields
+- Statement PDF SSRF protection uses HTTPS enforcement + private IP range blocking instead of domain whitelist (S3/CDN pre-signed URLs are compatible)
+
 ## [1.1.1] - 2026-03-14
 
 ### Added

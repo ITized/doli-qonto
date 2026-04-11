@@ -36,6 +36,9 @@ package-lock.json
 *.tar
 dist/
 
+# DoliStore publishing notes (local only)
+DOLISTORE_DESCRIPTIONS.md
+
 # Test files
 tests/output/
 coverage/

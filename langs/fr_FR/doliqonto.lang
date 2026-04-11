@@ -117,6 +117,10 @@ SuggestedSupplierInvoices = Factures fournisseurs suggérées
 SuggestedBankLines = Lignes bancaires suggérées
 NoMatchingInvoicesFound = Aucune facture correspondante trouvée
 NoMatchingBankLinesFound = Aucune ligne bancaire correspondante trouvée
+SearchBankLineManually = Recherche manuelle de ligne bancaire
+SearchBankLinePlaceholder = Libellé ou référence de relevé
+BankLineAlreadyLinked = Déjà lié à une autre transaction Qonto
+BankLineAlreadyLinkedConfirm = Cette ligne bancaire est déjà liée à une autre transaction Qonto. Voulez-vous vraiment la réassocier à cette transaction ?
 ManualSearch = Recherche manuelle
 SearchInvoiceManually = Vous pouvez rechercher des factures manuellement
 SearchInvoices = Rechercher des factures
@@ -196,3 +200,31 @@ DatabaseMaintenance = Maintenance de la base de données
 DatabaseUpgradeHelp = Cliquez sur le bouton ci-dessous pour appliquer les mises à jour du schéma de base de données (migrations). Cette opération peut être exécutée plusieurs fois sans risque.
 UpgradeDatabase = Mettre à jour la base de données
 DatabaseUpgraded = Base de données mise à jour avec succès
+
+#
+# Rapprochement bancaire
+#
+BankReconciliation = Rapprochement bancaire
+Period = Période
+NumReleve = Réf. relevé
+NoTransactions = Aucune transaction
+Incomplete = Incomplet
+NoBankAccountLinked = Aucun compte bancaire lié trouvé. Veuillez d'abord configurer la correspondance des comptes bancaires.
+NoQontoTransactionsForPeriod = Aucune transaction Qonto trouvée pour cette période.
+ReconciliationStatus = État
+ReconciliationBankLinesAssigned = Lignes bancaires Dolibarr
+ReconciliationPDFStatement = PDF Qonto
+ReconciliationPendingAssign = À assigner
+ReconciliationNotAssigned = Non assignée
+ReconciliationAlreadyAssigned = Toutes les lignes bancaires sont déjà assignées à ce relevé
+ReconciliationAssignBtn = Assigner au relevé %s
+ReconciliationAssigned = %s ligne(s) bancaire(s) assignée(s) au relevé %s
+ReconciliationDownloadPDF = Télécharger le relevé PDF Qonto
+ReconciliationReDownloadPDF = Re-télécharger le relevé PDF Qonto
+ReconciliationPDFDownloaded = Relevé PDF téléchargé : %s
+ReconciliationPDFError = Erreur lors du téléchargement du relevé PDF
+ReconciliationStatementFetchError = Erreur lors de la récupération des relevés Qonto
+ReconciliationNoPDFAvailable = Aucun relevé Qonto disponible pour cette période
+ReconciliationNoStatements = Aucun relevé disponible
+ReconciliationViewReleve = Voir le relevé Dolibarr
+ReconciliationInvalidPeriod = Format de période invalide

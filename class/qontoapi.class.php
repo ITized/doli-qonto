@@ -734,6 +734,113 @@ class QontoApi
 	}
 
 	/**
+	 * List monthly statements from Qonto
+	 *
+	 * @param string $bankAccountId Qonto bank account ID (optional, filters by account)
+	 * @param string $periodFrom    Period from in MM-YYYY format (optional)
+	 * @param string $periodTo      Period to in MM-YYYY format (optional)
+	 * @return array|false          Array with 'statements' key on success, false on error
+	 */
+	public function listStatements($bankAccountId = '', $periodFrom = '', $periodTo = '')
+	{
+		$queryParams = array('per_page' => 100, 'sort_by' => 'period:desc');
+		if (!empty($bankAccountId)) {
+			$queryParams['bank_account_ids[]'] = $bankAccountId;
+		}
+		if (!empty($periodFrom)) {
+			$queryParams['period_from'] = $periodFrom;
+		}
+		if (!empty($periodTo)) {
+			$queryParams['period_to'] = $periodTo;
+		}
+
+		$endpoint = '/v2/statements?' . http_build_query($queryParams);
+		$response = $this->makeRequest($endpoint, 'GET', array());
+
+		if ($response === false) {
+			return false;
+		}
+
+		if (!isset($response['statements'])) {
+			$this->error = 'Unexpected API response: missing statements key';
+			return false;
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Download a Qonto monthly statement PDF to a local path
+	 *
+	 * @param string $statementId     Qonto statement UUID
+	 * @param string $destinationPath Absolute local file path to write to
+	 * @return bool                   True on success, false on error
+	 */
+	public function downloadStatement($statementId, $destinationPath)
+	{
+		$statementData = $this->makeRequest('/v2/statements/' . urlencode($statementId), 'GET', array());
+		if ($statementData === false) {
+			return false;
+		}
+
+		if (empty($statementData['statement']['file']['file_url'])) {
+			$this->error = 'Statement file URL not found';
+			return false;
+		}
+
+		$url = $statementData['statement']['file']['file_url'];
+
+		// The file_url is a pre-signed URL returned by the authenticated Qonto API.
+		// It is not user-supplied input, so SSRF risk is mitigated at the API level.
+		// We still enforce HTTPS and disallow private/loopback IP ranges.
+		$parsedUrl = parse_url($url);
+		if (empty($parsedUrl['scheme']) || $parsedUrl['scheme'] !== 'https') {
+			$this->error = 'Statement URL must use HTTPS';
+			return false;
+		}
+		if (empty($parsedUrl['host'])) {
+			$this->error = 'Statement URL has no host';
+			return false;
+		}
+		// Block private/loopback ranges to prevent SSRF against internal services
+		$ip = gethostbyname($parsedUrl['host']);
+		if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+			$this->error = 'Statement URL resolves to a private or reserved IP address';
+			return false;
+		}
+
+		// Download using cURL (no auth headers needed — URL is pre-signed)
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+		curl_setopt($ch, CURLOPT_MAXREDIRS, 3);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+		$fileContent = curl_exec($ch);
+		$httpCode    = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		$curlError   = curl_error($ch);
+		curl_close($ch);
+
+		if ($curlError) {
+			$this->error = 'cURL error downloading statement PDF: ' . $curlError;
+			return false;
+		}
+		if ($httpCode >= 400 || $fileContent === false || $fileContent === '') {
+			$this->error = 'Failed to download statement PDF (HTTP ' . $httpCode . ')';
+			return false;
+		}
+
+		$result = file_put_contents($destinationPath, $fileContent);
+		if ($result === false) {
+			$this->error = 'Failed to save statement PDF to: ' . $destinationPath;
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
 	 * Sync transactions from Qonto
 	 *
 	 * @param int $daysBack Number of days to fetch backwards

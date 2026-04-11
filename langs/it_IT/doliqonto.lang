@@ -118,6 +118,10 @@ SuggestedSupplierInvoices = Fatture fornitori suggerite
 SuggestedBankLines = Righe bancarie suggerite
 NoMatchingInvoicesFound = Nessuna fattura corrispondente trovata
 NoMatchingBankLinesFound = Nessuna riga bancaria corrispondente trovata
+SearchBankLineManually = Ricerca manuale riga bancaria
+SearchBankLinePlaceholder = Descrizione o rif. estratto
+BankLineAlreadyLinked = Già collegata a un'altra transazione Qonto
+BankLineAlreadyLinkedConfirm = Questa riga bancaria è già collegata a un'altra transazione Qonto. Sei sicuro di volerla ricollegare a questa transazione?
 ManualSearch = Ricerca manuale
 SearchInvoiceManually = Puoi cercare le fatture manualmente
 SearchInvoices = Cerca fatture
@@ -197,3 +201,31 @@ DatabaseMaintenance = Manutenzione database
 DatabaseUpgradeHelp = Fai clic sul pulsante qui sotto per applicare gli aggiornamenti dello schema del database (migrazioni). Questa operazione può essere eseguita più volte in sicurezza.
 UpgradeDatabase = Aggiorna database
 DatabaseUpgraded = Database aggiornato con successo
+
+#
+# Riconciliazione bancaria
+#
+BankReconciliation = Riconciliazione bancaria
+Period = Periodo
+NumReleve = Rif. estratto
+NoTransactions = Nessuna transazione
+Incomplete = Incompleto
+NoBankAccountLinked = Nessun conto bancario collegato trovato. Configurare prima la mappatura dei conti bancari.
+NoQontoTransactionsForPeriod = Nessuna transazione Qonto trovata per questo periodo.
+ReconciliationStatus = Stato
+ReconciliationBankLinesAssigned = Righe bancarie Dolibarr
+ReconciliationPDFStatement = PDF Qonto
+ReconciliationPendingAssign = Da assegnare
+ReconciliationNotAssigned = Non assegnata
+ReconciliationAlreadyAssigned = Tutte le righe bancarie sono già assegnate a questo estratto
+ReconciliationAssignBtn = Assegna all'estratto %s
+ReconciliationAssigned = %s riga/e bancaria/e assegnata/e all'estratto %s
+ReconciliationDownloadPDF = Scarica PDF Qonto
+ReconciliationReDownloadPDF = Riscarica PDF Qonto
+ReconciliationPDFDownloaded = PDF estratto scaricato: %s
+ReconciliationPDFError = Errore durante il download del PDF dell'estratto
+ReconciliationStatementFetchError = Errore nel recupero degli estratti Qonto
+ReconciliationNoPDFAvailable = Nessun estratto Qonto disponibile per questo periodo
+ReconciliationNoStatements = Nessun estratto disponibile
+ReconciliationViewReleve = Visualizza estratto Dolibarr
+ReconciliationInvalidPeriod = Formato del periodo non valido

@@ -118,6 +118,10 @@ SuggestedSupplierInvoices = Vorgeschlagene Lieferantenrechnungen
 SuggestedBankLines = Vorgeschlagene Bankzeilen
 NoMatchingInvoicesFound = Keine passenden Rechnungen gefunden
 NoMatchingBankLinesFound = Keine passenden Bankzeilen gefunden
+SearchBankLineManually = Manuelle Bankzeilen-Suche
+SearchBankLinePlaceholder = Bezeichnung oder Kontoauszugs-Referenz
+BankLineAlreadyLinked = Bereits mit einer anderen Qonto-Transaktion verknüpft
+BankLineAlreadyLinkedConfirm = Diese Bankzeile ist bereits mit einer anderen Qonto-Transaktion verknüpft. Möchten Sie sie wirklich mit dieser Transaktion neu verknüpfen?
 ManualSearch = Manuelle Suche
 SearchInvoiceManually = Sie können manuell nach Rechnungen suchen
 SearchInvoices = Rechnungen suchen
@@ -197,3 +201,31 @@ DatabaseMaintenance = Datenbankwartung
 DatabaseUpgradeHelp = Klicken Sie auf die Schaltfläche unten, um Datenbankschema-Updates (Migrationen) anzuwenden. Dieser Vorgang kann mehrfach sicher ausgeführt werden.
 UpgradeDatabase = Datenbank aktualisieren
 DatabaseUpgraded = Datenbank erfolgreich aktualisiert
+
+#
+# Kontoabstimmung
+#
+BankReconciliation = Kontoabstimmung
+Period = Zeitraum
+NumReleve = Kontoauszug-Ref.
+NoTransactions = Keine Transaktionen
+Incomplete = Unvollständig
+NoBankAccountLinked = Kein verknüpftes Bankkonto gefunden. Bitte konfigurieren Sie zuerst die Bankkonto-Zuordnung.
+NoQontoTransactionsForPeriod = Keine Qonto-Transaktionen für diesen Zeitraum gefunden.
+ReconciliationStatus = Status
+ReconciliationBankLinesAssigned = Dolibarr-Bankzeilen
+ReconciliationPDFStatement = Qonto-PDF
+ReconciliationPendingAssign = Noch zuzuweisen
+ReconciliationNotAssigned = Nicht zugewiesen
+ReconciliationAlreadyAssigned = Alle Bankzeilen sind bereits diesem Kontoauszug zugewiesen
+ReconciliationAssignBtn = Kontoauszug %s zuweisen
+ReconciliationAssigned = %s Bankzeile(n) dem Kontoauszug %s zugewiesen
+ReconciliationDownloadPDF = Qonto-PDF herunterladen
+ReconciliationReDownloadPDF = Qonto-PDF erneut herunterladen
+ReconciliationPDFDownloaded = Kontoauszug-PDF heruntergeladen: %s
+ReconciliationPDFError = Fehler beim Herunterladen des Kontoauszug-PDFs
+ReconciliationStatementFetchError = Fehler beim Abrufen der Qonto-Kontoauszüge
+ReconciliationNoPDFAvailable = Kein Qonto-Kontoauszug für diesen Zeitraum verfügbar
+ReconciliationNoStatements = Keine Kontoauszüge verfügbar
+ReconciliationViewReleve = Dolibarr-Kontoauszug ansehen
+ReconciliationInvalidPeriod = Ungültiges Zeitraumformat

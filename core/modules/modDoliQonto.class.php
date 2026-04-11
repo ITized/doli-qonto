@@ -65,7 +65,7 @@ class modDoliQonto extends DolibarrModules
 		$this->editor_url = 'https://itized.com';
 
 		// Possible values for version are: 'development', 'experimental', 'dolibarr', 'dolibarr_deprecated' or a version string like 'x.y.z'
-	$this->version = '1.1.1';
+	$this->version = '1.2.0';
 		// Url to the file with your last numberversion of this module
 		//$this->url_last_version = 'http://www.example.com/versionmodule.txt';
 
@@ -318,6 +318,24 @@ class modDoliQonto extends DolibarrModules
 			'user'=>2,
 		);
 		/* END MODULEBUILDER LEFTMENU TAX */
+
+		/* BEGIN MODULEBUILDER LEFTMENU RECONCILIATION */
+		$this->menu[$r++] = array(
+			'fk_menu'=>'fk_mainmenu=bank,fk_leftmenu=qonto',
+			'type'=>'left',
+			'titre'=>'BankReconciliation',
+			'prefix' => img_picto('', 'bank_account', 'class="paddingright pictofixedwidth valignmiddle"'),
+			'mainmenu'=>'bank',
+			'leftmenu'=>'qonto_reconciliation',
+			'url'=>'/doliqonto/reconciliation.php',
+			'langs'=>'doliqonto@doliqonto',
+			'position'=>1000 + $r,
+			'enabled'=>'$conf->doliqonto->enabled',
+			'perms'=>'$user->rights->doliqonto->transaction->read',
+			'target'=>'',
+			'user'=>2,
+		);
+		/* END MODULEBUILDER LEFTMENU RECONCILIATION */
 
 		/* BEGIN MODULEBUILDER LEFTMENU CONFIGURATION */
 		$this->menu[$r++] = array(

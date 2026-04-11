@@ -1,6 +1,6 @@
 # DoliQonto - Qonto Banking Integration for Dolibarr
 
-Complete Dolibarr module for Qonto banking API integration with transaction sync, payment matching, and attachment management.
+Complete Dolibarr module for Qonto banking API integration with transaction sync, payment matching, attachment management, and monthly statement reconciliation.
 
 ## Quick Start
 
@@ -8,6 +8,7 @@ Complete Dolibarr module for Qonto banking API integration with transaction sync
 2. **Configure**: Setup → Enter API credentials or connect via OAuth2
 3. **Link Accounts**: Bank Accounts → Auto-link by IBAN
 4. **Sync**: Transactions → Sync Transactions → Auto-Match All
+5. **Reconcile**: Bank Reconciliation → Select account + period → Assign to statement + Download PDF
 
 ## Features
 
@@ -17,16 +18,11 @@ Complete Dolibarr module for Qonto banking API integration with transaction sync
 - ✅ Auto-matching with existing bank lines
 - ✅ Smart auto-matching with invoices (name, amount, due date)
 - ✅ Manual payment matching with invoices + inline search
+- ✅ Manual bank line search (by label, reference, or statement ref — no amount/date constraints)
 - ✅ Attachment sync (Qonto ↔ Dolibarr) with progress indicator
 - ✅ Duplicate upload prevention (PRG pattern)
-- ✅ Multi-language (EN, FR)
-
-## Documentation
-
-- **Setup**: See Module Setup section below
-- **API**: See `class/qontoapi.class.php` for endpoints
-- **Hooks**: See `core/hooks/doliqontohooks.class.php`
-- **Database**: See `sql/` directory for schema
+- ✅ Monthly statement reconciliation (assign `num_releve`, download Qonto PDF)
+- ✅ Multi-language (EN, FR, DE, ES, IT, NL, PT)
 
 ## Requirements
 
@@ -39,7 +35,7 @@ Complete Dolibarr module for Qonto banking API integration with transaction sync
 
 ### 1. Authentication
 
-**Option A: API Key (Recommended for now)**
+**Option A: API Key (Recommended)**
 - Go to: DoliQonto → Setup
 - Select "API Key (Classic)"
 - Enter Organization Slug + API Key from Qonto dashboard
@@ -66,27 +62,38 @@ Complete Dolibarr module for Qonto banking API integration with transaction sync
 ### 4. Match Payments
 
 For unmatched transactions:
-- Click "Match" button
-- Select invoice
+- Click "Match" button on any pending transaction
+- Select a suggested invoice, or use the manual invoice search
+- Use the **manual bank line search** for transactions that have no matching invoice (expense reports, taxes, etc.) — search by any part of the label or reference
 - Confirm → Creates payment + bank line + links to transaction
+
+### 5. Monthly Reconciliation
+
+- Go to: DoliQonto → Bank Reconciliation
+- Select the bank account and month
+- Review the reconciliation table: Qonto transactions vs matched Dolibarr bank lines
+- Click **"Assign to statement YYYYMM"**: sets `num_releve` on all matched bank lines for the period (those not yet assigned), making them appear in the native Dolibarr statement view
+- Click **"Download Qonto PDF"**: fetches the official Qonto monthly statement PDF from the API and saves it in the correct Dolibarr directory (`{bank_dir}/{account_id}/statement/{YYYYMM}/`) so it appears directly in `account_statement_document.php`
 
 ## Key Files
 
 ```
-class/qontoapi.class.php          # API wrapper, OAuth2, sync logic
-class/qontotransaction.class.php  # Transaction model, matching
+class/qontoapi.class.php             # API wrapper: transactions, statements, attachments
+class/qontotransaction.class.php     # Transaction model, matching logic
 core/hooks/doliqontohooks.class.php  # Bank card hooks
-transactions.php                  # Main transaction list
-matching.php                      # Payment matching UI
-attachments.php                   # Attachment sync UI
+transactions.php                     # Main transaction list
+matching.php                         # Payment matching UI
+reconciliation.php                   # Monthly statement reconciliation
+attachments.php                      # Attachment sync UI
+taxvalidation.php                    # VAT conflict resolution UI
 ```
 
 ## Database Tables
 
-- `llx_qonto_transactions` - Synced transactions
-- `llx_bank_account_extrafields` - Qonto↔Dolibarr account links
-- `llx_qonto_attachments` - Attachment metadata and sync tracking (to/from Qonto)
-- `llx_qonto_tax_validation` - VAT/tax conflict resolution between Qonto and Dolibarr
+- `llx_qonto_transactions` — Synced transactions
+- `llx_bank_account_extrafields` — Qonto↔Dolibarr account links
+- `llx_qonto_attachments` — Attachment metadata and sync tracking (to/from Qonto)
+- `llx_qonto_tax_validation` — VAT/tax conflict resolution between Qonto and Dolibarr
 
 **Key relationships:**
 - `fk_bank` links transactions to `llx_bank.rowid`
@@ -95,12 +102,7 @@ attachments.php                   # Attachment sync UI
   - **Matched**: `fk_bank IS NOT NULL`
   - **Pending**: `fk_bank IS NULL AND ignored = 0`
   - **Ignored**: `ignored = 1`
-- This ensures data consistency with Dolibarr's payment architecture
-
-**Note:** As of v1.1+:
-- Redundant columns `fk_facture`, `fk_facture_fourn`, and `fk_payment_fourn` have been removed
-- `sync_status` replaced with `ignored` boolean - match status is now derived from `fk_bank`
-- Invoice links are managed exclusively through `fk_bank`
+- Reconciliation uses `llx_bank.num_releve` (standard Dolibarr field, format `YYYYMM`)
 
 ## Configuration Options
 
@@ -108,7 +110,7 @@ attachments.php                   # Attachment sync UI
 |---------|---------|-------------|
 | Auth Method | `api_key` | API Key or OAuth2 |
 | Sync Days Back | `30` | How far back to sync |
-| Auto Sync | `No` | Daily automatic sync |
+| Auto Sync | `No` | Hourly automatic sync via cron |
 | Auto Match | `No` | Auto-match on sync |
 
 ## Troubleshooting
@@ -123,9 +125,13 @@ attachments.php                   # Attachment sync UI
 - Check amounts match exactly (uses absolute value)
 - Date tolerance is ±2 days
 
-**Invoice not marked paid**
-- Known issue, see KNOWN_ISSUES.md
-- Workaround: Mark manually in Dolibarr
+**Bank line not found in manual search**
+- The manual bank line search covers all lines including already-linked ones
+- Already-linked lines are shown greyed out with a confirmation prompt before re-linking
+
+**Statement PDF not appearing in Dolibarr**
+- Use the Download button in Bank Reconciliation (not the document tab of the bank account)
+- The PDF is stored in `{bank_dir}/{account_id}/statement/{YYYYMM}/` and is visible in the native statement page
 
 ## Development
 
@@ -141,11 +147,10 @@ dol_syslog("DoliQonto: Message", LOG_DEBUG);
 
 - Issues: Create GitHub issue with logs
 - Email: ionut.finta@itized.com
-- Documentation: See code comments
 
 ## License
 
-GPL-3.0 - See LICENSE file
+GPL-3.0 — See LICENSE file
 
 ## Credits
 
@@ -154,7 +159,8 @@ Website: https://itized.com
 
 ## Version
 
-**1.0.0** (November 30, 2025)
-- Initial release
-- Full feature set implemented
-- Known issues documented
+**1.2.0** (April 11, 2026)
+- Monthly bank statement reconciliation
+- Manual bank line search in matching page
+- Statement PDF downloaded to correct Dolibarr directory with original filename
+- 7 languages: EN, FR, DE, ES, IT, NL, PT

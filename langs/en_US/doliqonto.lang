@@ -118,6 +118,10 @@ SuggestedSupplierInvoices = Suggested Supplier Invoices
 SuggestedBankLines = Suggested Bank Lines
 NoMatchingInvoicesFound = No matching invoices found
 NoMatchingBankLinesFound = No matching bank lines found
+SearchBankLineManually = Manual bank line search
+SearchBankLinePlaceholder = Label or statement ref
+BankLineAlreadyLinked = Already linked to another Qonto transaction
+BankLineAlreadyLinkedConfirm = This bank line is already linked to another Qonto transaction. Are you sure you want to re-link it to this transaction?
 ManualSearch = Manual Search
 SearchInvoiceManually = You can search for invoices manually
 SearchInvoices = Search Invoices
@@ -197,3 +201,31 @@ DatabaseMaintenance = Database Maintenance
 DatabaseUpgradeHelp = Click the button below to apply database schema updates (migrations). This is safe to run multiple times.
 UpgradeDatabase = Upgrade Database
 DatabaseUpgraded = Database upgraded successfully
+
+#
+# Bank Reconciliation
+#
+BankReconciliation = Bank Reconciliation
+Period = Period
+NumReleve = Statement Ref.
+NoTransactions = No transactions
+Incomplete = Incomplete
+NoBankAccountLinked = No linked bank account found. Please configure the bank account mapping first.
+NoQontoTransactionsForPeriod = No Qonto transactions found for this period.
+ReconciliationStatus = Status
+ReconciliationBankLinesAssigned = Dolibarr Bank Lines
+ReconciliationPDFStatement = Qonto PDF
+ReconciliationPendingAssign = To Assign
+ReconciliationNotAssigned = Not assigned
+ReconciliationAlreadyAssigned = All bank lines are already assigned to this statement
+ReconciliationAssignBtn = Assign to statement %s
+ReconciliationAssigned = %s bank line(s) assigned to statement %s
+ReconciliationDownloadPDF = Download Qonto PDF
+ReconciliationReDownloadPDF = Re-download Qonto PDF
+ReconciliationPDFDownloaded = Statement PDF downloaded: %s
+ReconciliationPDFError = Error downloading statement PDF
+ReconciliationStatementFetchError = Error retrieving Qonto statements
+ReconciliationNoPDFAvailable = No Qonto statement found for this period
+ReconciliationNoStatements = No statements available
+ReconciliationViewReleve = View Dolibarr statement
+ReconciliationInvalidPeriod = Invalid period format

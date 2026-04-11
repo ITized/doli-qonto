@@ -118,6 +118,10 @@ SuggestedSupplierInvoices = Voorgestelde leveranciersfacturen
 SuggestedBankLines = Voorgestelde bankregels
 NoMatchingInvoicesFound = Geen overeenkomende facturen gevonden
 NoMatchingBankLinesFound = Geen overeenkomende bankregels gevonden
+SearchBankLineManually = Handmatig zoeken naar bankregel
+SearchBankLinePlaceholder = Omschrijving of afschriftreferentie
+BankLineAlreadyLinked = Al gekoppeld aan een andere Qonto-transactie
+BankLineAlreadyLinkedConfirm = Deze bankregel is al gekoppeld aan een andere Qonto-transactie. Weet u zeker dat u deze opnieuw wilt koppelen aan deze transactie?
 ManualSearch = Handmatig zoeken
 SearchInvoiceManually = U kunt handmatig naar facturen zoeken
 SearchInvoices = Facturen zoeken
@@ -197,3 +201,31 @@ DatabaseMaintenance = Database-onderhoud
 DatabaseUpgradeHelp = Klik op de knop hieronder om database-schema-updates (migraties) toe te passen. Deze bewerking kan meerdere keren veilig worden uitgevoerd.
 UpgradeDatabase = Database bijwerken
 DatabaseUpgraded = Database succesvol bijgewerkt
+
+#
+# Bankreconciliatie
+#
+BankReconciliation = Bankreconciliatie
+Period = Periode
+NumReleve = Afschrift ref.
+NoTransactions = Geen transacties
+Incomplete = Onvolledig
+NoBankAccountLinked = Geen gekoppelde bankrekening gevonden. Configureer eerst de bankrekening-koppeling.
+NoQontoTransactionsForPeriod = Geen Qonto-transacties gevonden voor deze periode.
+ReconciliationStatus = Status
+ReconciliationBankLinesAssigned = Dolibarr bankregels
+ReconciliationPDFStatement = Qonto PDF
+ReconciliationPendingAssign = Toe te wijzen
+ReconciliationNotAssigned = Niet toegewezen
+ReconciliationAlreadyAssigned = Alle bankregels zijn al toegewezen aan dit afschrift
+ReconciliationAssignBtn = Toewijzen aan afschrift %s
+ReconciliationAssigned = %s bankrege(l)(s) toegewezen aan afschrift %s
+ReconciliationDownloadPDF = Qonto PDF downloaden
+ReconciliationReDownloadPDF = Qonto PDF opnieuw downloaden
+ReconciliationPDFDownloaded = Afschrift PDF gedownload: %s
+ReconciliationPDFError = Fout bij downloaden van afschrift PDF
+ReconciliationStatementFetchError = Fout bij ophalen van Qonto-afschriften
+ReconciliationNoPDFAvailable = Geen Qonto-afschrift beschikbaar voor deze periode
+ReconciliationNoStatements = Geen afschriften beschikbaar
+ReconciliationViewReleve = Dolibarr-afschrift bekijken
+ReconciliationInvalidPeriod = Ongeldig periodeformaat

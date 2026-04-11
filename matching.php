@@ -66,6 +66,7 @@ $action = GETPOST('action', 'aZ09');
 $invoice_id = GETPOST('invoice_id', 'int');
 $invoice_type = GETPOST('invoice_type', 'alpha');
 $search_invoice = GETPOST('search_invoice', 'alpha');
+$search_bank_line = GETPOST('search_bank_line', 'alphanohtml');
 
 // Access control
 if (!$user->rights->doliqonto->payment->match) {
@@ -492,7 +493,11 @@ if ($resql && $db->num_rows($resql) > 0) {
 if ($dolibarrAccountId > 0) {
 	// Search for bank lines with flexible matching
 	// Match criteria: same account, similar amount (±10%), date within 7 days
-	$settledTs = strtotime($transaction->settled_at);
+	$settledRaw = !empty($transaction->settled_at) ? $transaction->settled_at : $transaction->emitted_at;
+	$settledTs = strtotime($settledRaw);
+	if (empty($settledTs) || $settledTs < 0) {
+		$settledTs = time();
+	}
 	$dateFrom = date('Y-m-d', $settledTs - (7 * 86400)); // 7 days before
 	$dateTo = date('Y-m-d', $settledTs + (7 * 86400)); // 7 days after
 	$amountMin = abs($transaction->amount) * 0.9; // -10%
@@ -574,8 +579,201 @@ if ($dolibarrAccountId > 0) {
 	} else {
 		dol_print_error($db);
 	}
+
+	// Manual bank line search — always shown
+	print '<br><h3>'.$langs->trans('SearchBankLineManually').'</h3>';
+	print '<form method="GET" action="'.$_SERVER['PHP_SELF'].'">';
+	print '<input type="hidden" name="id" value="'.$id.'">';
+	print '<div class="inline-block valignmiddle">';
+	print '<input type="text" name="search_bank_line" class="flat minwidth200" placeholder="'.dol_escape_htmltag($langs->trans('SearchBankLinePlaceholder')).'" value="'.dol_escape_htmltag($search_bank_line).'">';
+	print ' <button type="submit" class="button">'.$langs->trans('Search').'</button>';
+	print '</div>';
+	print '</form>';
+
+	if (!empty($search_bank_line)) {
+		// Build list of already-linked bank line rowids (to flag them, NOT to exclude)
+		$alreadyLinked = array();
+		$sqlLinked = "SELECT qt.fk_bank, qt.rowid as qt_rowid FROM ".MAIN_DB_PREFIX."qonto_transactions as qt";
+		$sqlLinked .= " WHERE qt.fk_bank IS NOT NULL AND qt.fk_bank > 0 AND qt.rowid != ".(int)$id;
+		$resLinked = $db->query($sqlLinked);
+		if ($resLinked) {
+			while ($objL = $db->fetch_object($resLinked)) {
+				$alreadyLinked[(int)$objL->fk_bank] = (int)$objL->qt_rowid;
+			}
+		}
+
+		$searchBankTerm = $db->escape($search_bank_line);
+		$sqlBankSearch = "SELECT b.rowid, b.datev, b.amount, b.label, b.num_releve, b.num_chq, b.fk_type, ba.ref as account_ref";
+		$sqlBankSearch .= " FROM ".MAIN_DB_PREFIX."bank as b";
+		$sqlBankSearch .= " INNER JOIN ".MAIN_DB_PREFIX."bank_account as ba ON ba.rowid = b.fk_account";
+		$sqlBankSearch .= " WHERE ba.entity = ".(int)$conf->entity;
+		// If we know the account, prioritise it but still search all linked accounts
+		if ($dolibarrAccountId > 0) {
+			$sqlBankSearch .= " AND b.fk_account = ".(int)$dolibarrAccountId;
+		}
+		$sqlBankSearch .= " AND (b.label LIKE '%".$searchBankTerm."%'";
+		$sqlBankSearch .= "   OR b.num_chq LIKE '%".$searchBankTerm."%'";
+		$sqlBankSearch .= "   OR b.num_releve LIKE '%".$searchBankTerm."%')";
+		$sqlBankSearch .= " ORDER BY b.datev DESC";
+		$sqlBankSearch .= " LIMIT 50";
+
+		$resqlBankSearch = $db->query($sqlBankSearch);
+		if ($resqlBankSearch) {
+			$numBankSearch = $db->num_rows($resqlBankSearch);
+			if ($numBankSearch > 0) {
+				print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
+				print '<input type="hidden" name="token" value="'.newToken().'">';
+				print '<input type="hidden" name="action" value="link_bank_line">';
+				print '<input type="hidden" name="id" value="'.$id.'">';
+
+				print '<table class="noborder centpercent">';
+				print '<tr class="liste_titre">';
+				print '<th>'.$langs->trans('Date').'</th>';
+				print '<th class="right">'.$langs->trans('Amount').'</th>';
+				print '<th>'.$langs->trans('Label').'</th>';
+				print '<th>'.$langs->trans('BankStatementRef').'</th>';
+				print '<th>'.$langs->trans('Type').'</th>';
+				if ($dolibarrAccountId <= 0) {
+					print '<th>'.$langs->trans('BankAccount').'</th>';
+				}
+				print '<th class="center">'.$langs->trans('Action').'</th>';
+				print '</tr>';
+
+				while ($objBS = $db->fetch_object($resqlBankSearch)) {
+					$bankLineId   = (int)$objBS->rowid;
+					$isLinked     = isset($alreadyLinked[$bankLineId]);
+					$amountDiff   = abs($objBS->amount) - abs($transaction->amount);
+					$rowClass     = $isLinked ? 'oddeven opacitymedium' : 'oddeven';
+					print '<tr class="'.$rowClass.'">';
+					print '<td>'.dol_print_date($db->jdate($objBS->datev), 'day').'</td>';
+					print '<td class="right">'.price($objBS->amount);
+					if (abs($amountDiff) > 0.01) {
+						print ' <span class="opacitymedium">('.($amountDiff >= 0 ? '+' : '').price($amountDiff).')</span>';
+					}
+					print '</td>';
+					print '<td>'.dol_escape_htmltag(dol_trunc($objBS->label, 60));
+					if (!empty($objBS->num_chq)) {
+						print '<br><span class="opacitymedium small">'.dol_escape_htmltag($objBS->num_chq).'</span>';
+					}
+					print '</td>';
+					print '<td>'.dol_escape_htmltag($objBS->num_releve).'</td>';
+					print '<td>'.dol_escape_htmltag($objBS->fk_type).'</td>';
+					if ($dolibarrAccountId <= 0) {
+						print '<td>'.dol_escape_htmltag($objBS->account_ref).'</td>';
+					}
+					print '<td class="center">';
+					if ($isLinked) {
+						// Already linked to another Qonto transaction — warn but allow override
+						$otherTxUrl = $_SERVER['PHP_SELF'].'?id='.urlencode($alreadyLinked[$bankLineId]);
+						print '<span class="opacitymedium small">'.$langs->trans('BankLineAlreadyLinked').'</span><br>';
+						print '<button type="submit" name="bank_line_id" value="'.$bankLineId.'" class="button smallpaddingimp button-warning" onclick="return confirm(\''.dol_escape_js($langs->trans('BankLineAlreadyLinkedConfirm')).'\');">'.$langs->trans('Link').'</button>';
+					} else {
+						print '<button type="submit" name="bank_line_id" value="'.$bankLineId.'" class="button">'.$langs->trans('Link').'</button>';
+					}
+					print '</td>';
+					print '</tr>';
+				}
+
+				print '</table>';
+				print '</form>';
+			} else {
+				print '<div class="info">'.$langs->trans('NoMatchingBankLinesFound').'</div>';
+			}
+			$db->free($resqlBankSearch);
+		}
+	}
 } else {
-	print '<div class="warning">'.$langs->trans("BankAccountNotLinked").'</div>';
+	// Account not linked but still show the manual search across all accounts
+	print '<div class="warning">'.$langs->trans('BankAccountNotLinked').'</div>';
+	print '<br>';
+
+	// Build the same manual search form, scoped to all bank accounts
+	$dolibarrAccountId = 0; // ensure 0 so search below spans all accounts
+
+	print '<h3>'.$langs->trans('SearchBankLineManually').'</h3>';
+	print '<form method="GET" action="'.$_SERVER['PHP_SELF'].'">';
+	print '<input type="hidden" name="id" value="'.$id.'">';
+	print '<div class="inline-block valignmiddle">';
+	print '<input type="text" name="search_bank_line" class="flat minwidth200" placeholder="'.dol_escape_htmltag($langs->trans('SearchBankLinePlaceholder')).'" value="'.dol_escape_htmltag($search_bank_line).'">';
+	print ' <button type="submit" class="button">'.$langs->trans('Search').'</button>';
+	print '</div>';
+	print '</form>';
+
+	if (!empty($search_bank_line)) {
+		$alreadyLinked = array();
+		$sqlLinked = "SELECT qt.fk_bank, qt.rowid as qt_rowid FROM ".MAIN_DB_PREFIX."qonto_transactions as qt";
+		$sqlLinked .= " WHERE qt.fk_bank IS NOT NULL AND qt.fk_bank > 0 AND qt.rowid != ".(int)$id;
+		$resLinked = $db->query($sqlLinked);
+		if ($resLinked) {
+			while ($objL = $db->fetch_object($resLinked)) {
+				$alreadyLinked[(int)$objL->fk_bank] = (int)$objL->qt_rowid;
+			}
+		}
+
+		$searchBankTerm = $db->escape($search_bank_line);
+		$sqlBankSearch = "SELECT b.rowid, b.datev, b.amount, b.label, b.num_releve, b.num_chq, b.fk_type, ba.ref as account_ref";
+		$sqlBankSearch .= " FROM ".MAIN_DB_PREFIX."bank as b";
+		$sqlBankSearch .= " INNER JOIN ".MAIN_DB_PREFIX."bank_account as ba ON ba.rowid = b.fk_account";
+		$sqlBankSearch .= " WHERE ba.entity = ".(int)$conf->entity;
+		$sqlBankSearch .= " AND (b.label LIKE '%".$searchBankTerm."%'";
+		$sqlBankSearch .= "   OR b.num_chq LIKE '%".$searchBankTerm."%'";
+		$sqlBankSearch .= "   OR b.num_releve LIKE '%".$searchBankTerm."%')";
+		$sqlBankSearch .= " ORDER BY b.datev DESC LIMIT 50";
+
+		$resqlBankSearch = $db->query($sqlBankSearch);
+		if ($resqlBankSearch && $db->num_rows($resqlBankSearch) > 0) {
+			print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
+			print '<input type="hidden" name="token" value="'.newToken().'">';
+			print '<input type="hidden" name="action" value="link_bank_line">';
+			print '<input type="hidden" name="id" value="'.$id.'">';
+			print '<table class="noborder centpercent">';
+			print '<tr class="liste_titre">';
+			print '<th>'.$langs->trans('Date').'</th>';
+			print '<th class="right">'.$langs->trans('Amount').'</th>';
+			print '<th>'.$langs->trans('Label').'</th>';
+			print '<th>'.$langs->trans('BankStatementRef').'</th>';
+			print '<th>'.$langs->trans('Type').'</th>';
+			print '<th>'.$langs->trans('BankAccount').'</th>';
+			print '<th class="center">'.$langs->trans('Action').'</th>';
+			print '</tr>';
+			while ($objBS = $db->fetch_object($resqlBankSearch)) {
+				$bankLineId = (int)$objBS->rowid;
+				$isLinked   = isset($alreadyLinked[$bankLineId]);
+				$amountDiff = abs($objBS->amount) - abs($transaction->amount);
+				print '<tr class="'.($isLinked ? 'oddeven opacitymedium' : 'oddeven').'">';
+				print '<td>'.dol_print_date($db->jdate($objBS->datev), 'day').'</td>';
+				print '<td class="right">'.price($objBS->amount);
+				if (abs($amountDiff) > 0.01) {
+					print ' <span class="opacitymedium">('.($amountDiff >= 0 ? '+' : '').price($amountDiff).')</span>';
+				}
+				print '</td>';
+				print '<td>'.dol_escape_htmltag(dol_trunc($objBS->label, 60));
+				if (!empty($objBS->num_chq)) {
+					print '<br><span class="opacitymedium small">'.dol_escape_htmltag($objBS->num_chq).'</span>';
+				}
+				print '</td>';
+				print '<td>'.dol_escape_htmltag($objBS->num_releve).'</td>';
+				print '<td>'.dol_escape_htmltag($objBS->fk_type).'</td>';
+				print '<td>'.dol_escape_htmltag($objBS->account_ref).'</td>';
+				print '<td class="center">';
+				if ($isLinked) {
+					print '<span class="opacitymedium small">'.$langs->trans('BankLineAlreadyLinked').'</span><br>';
+					print '<button type="submit" name="bank_line_id" value="'.$bankLineId.'" class="button smallpaddingimp button-warning" onclick="return confirm(\''.dol_escape_js($langs->trans('BankLineAlreadyLinkedConfirm')).'\');">'.$langs->trans('Link').'</button>';
+				} else {
+					print '<button type="submit" name="bank_line_id" value="'.$bankLineId.'" class="button">'.$langs->trans('Link').'</button>';
+				}
+				print '</td>';
+				print '</tr>';
+			}
+			print '</table>';
+			print '</form>';
+		} elseif ($resqlBankSearch) {
+			print '<div class="info">'.$langs->trans('NoMatchingBankLinesFound').'</div>';
+		}
+		if ($resqlBankSearch) {
+			$db->free($resqlBankSearch);
+		}
+	}
 }
 
 print '</div>';
